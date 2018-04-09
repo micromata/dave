@@ -1,11 +1,11 @@
 package main
 
 import (
-	"golang.org/x/net/webdav"
-	"net/http"
-	"github.com/micromata/swd/app"
 	"fmt"
+	"github.com/micromata/swd/app"
+	"golang.org/x/net/webdav"
 	"log"
+	"net/http"
 )
 
 func main() {

@@ -1,10 +1,10 @@
 package app
 
 import (
-	"github.com/spf13/viper"
 	"fmt"
-	"os"
+	"github.com/spf13/viper"
 	"log"
+	"os"
 )
 
 // Config represents the configuration of the server application.
@@ -14,6 +14,7 @@ type Config struct {
 	TLS     *TLS
 }
 
+// TLS allows specification of a certificate and private key file
 type TLS struct {
 	CertFile string
 	KeyFile  string
@@ -23,7 +24,7 @@ type TLS struct {
 func ParseConfig() Config {
 	var cfg Config
 
-	setDefaults();
+	setDefaults()
 	viper.SetConfigName("config")
 	viper.AddConfigPath("./config")
 	viper.AddConfigPath("$HOME/.swd")
