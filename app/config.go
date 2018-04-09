@@ -3,12 +3,20 @@ package app
 import (
 	"github.com/spf13/viper"
 	"fmt"
+	"os"
+	"log"
 )
 
 // Config represents the configuration of the server application.
 type Config struct {
 	Address string
-	Port string
+	Port    string
+	TLS     *TLS
+}
+
+type TLS struct {
+	CertFile string
+	KeyFile  string
 }
 
 // ParseConfig parses the application configuration an sets defaults.
@@ -16,7 +24,6 @@ func ParseConfig() Config {
 	var cfg Config
 
 	setDefaults();
-
 	viper.SetConfigName("config")
 	viper.AddConfigPath("./config")
 	viper.AddConfigPath("$HOME/.swd")
@@ -24,12 +31,21 @@ func ParseConfig() Config {
 
 	err := viper.ReadInConfig()
 	if err != nil {
-		panic(fmt.Errorf("Fatal error config file: %s", err))
+		log.Fatal(fmt.Errorf("Fatal error config file: %s", err))
 	}
 
 	err = viper.Unmarshal(&cfg)
 	if err != nil {
-		panic(fmt.Errorf("Fatal error parsing config file: %s", err))
+		log.Fatal(fmt.Errorf("Fatal error parsing config file: %s", err))
+	}
+
+	if cfg.TLS != nil {
+		if _, err := os.Stat(cfg.TLS.KeyFile); err != nil {
+			log.Fatal(fmt.Errorf("TLS keyFile doesn't exist: %s", err))
+		}
+		if _, err := os.Stat(cfg.TLS.CertFile); err != nil {
+			log.Fatal(fmt.Errorf("TLS certFile doesn't exist: %s", err))
+		}
 	}
 
 	return cfg
@@ -39,4 +55,5 @@ func ParseConfig() Config {
 func setDefaults() {
 	viper.SetDefault("Address", "127.0.0.1")
 	viper.SetDefault("Port", "8000")
+	viper.SetDefault("TLS", nil)
 }

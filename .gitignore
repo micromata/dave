@@ -16,3 +16,6 @@ dist/
 
 # Intellij
 .idea/
+
+# SSL Certs
+*.pem
