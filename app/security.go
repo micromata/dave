@@ -44,7 +44,7 @@ func Handle(ctx context.Context, w http.ResponseWriter, r *http.Request, a *App)
 		return
 	}
 
-	a.Handler.ServeHTTP(w, r)
+	a.Handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
 // AuthenticatedHandler returns a new http.Handler which creates a new context and calls
@@ -55,4 +55,11 @@ func AuthenticatedHandler(a auth.AuthenticatorInterface, h AuthWebdavHandler, ap
 
 		h.ServeHTTP(ctx, w, r, application)
 	})
+}
+
+// NewBasicAuthWebdavHandler creates a new http.Handler with a basic authenticator and a desired
+// handler for basic auth and webdav.
+func NewBasicAuthWebdavHandler(a *App) http.Handler {
+	authenticator := auth.NewBasicAuthenticator(a.Config.Address, Authorize(a.Config))
+	return AuthenticatedHandler(authenticator, AuthWebdavHandlerFunc(Handle), a)
 }

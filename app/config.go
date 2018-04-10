@@ -26,7 +26,6 @@ type TLS struct {
 // UserInfo allows storing of a password and user directory.
 type UserInfo struct {
 	Password string
-	Dir      string
 }
 
 // ParseConfig parses the application configuration an sets defaults.

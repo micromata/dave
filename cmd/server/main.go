@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/abbot/go-http-auth"
 	"github.com/micromata/swd/app"
 	"golang.org/x/net/webdav"
 	"log"
@@ -13,9 +12,12 @@ func main() {
 	config := app.ParseConfig()
 
 	wdHandler := &webdav.Handler{
-		Prefix:     config.Prefix,
-		FileSystem: webdav.Dir(config.Dir),
+		Prefix: config.Prefix,
+		FileSystem: &app.UserDir{
+			BaseDir: config.Dir,
+		},
 		LockSystem: webdav.NewMemLS(),
+		Logger:     app.ModificationLogHandler,
 	}
 
 	a := &app.App{
@@ -23,8 +25,7 @@ func main() {
 		Handler: wdHandler,
 	}
 
-	authenticator := auth.NewBasicAuthenticator(config.Address, app.Authorize(config))
-	http.Handle("/", app.AuthenticatedHandler(authenticator, app.AuthWebdavHandlerFunc(app.Handle), a))
+	http.Handle("/", app.NewBasicAuthWebdavHandler(a))
 
 	connAddr := fmt.Sprintf("%s:%s", config.Address, config.Port)
 

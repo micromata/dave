@@ -38,6 +38,12 @@
   version = "v1.1.0"
 
 [[projects]]
+  name = "github.com/sirupsen/logrus"
+  packages = ["."]
+  revision = "c155da19408a8799da419ed3eeb0cb5db0ad5dbc"
+  version = "v1.0.5"
+
+[[projects]]
   name = "github.com/spf13/afero"
   packages = [".","mem"]
   revision = "63644898a8da0bc22138abf860edaf5277b6102e"
@@ -70,7 +76,7 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
-  packages = ["bcrypt","blowfish"]
+  packages = ["bcrypt","blowfish","ssh/terminal"]
   revision = "b2aa35443fbc700ab74c586ae79b81c171851023"
 
 [[projects]]
@@ -82,7 +88,7 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
-  packages = ["unix"]
+  packages = ["unix","windows"]
   revision = "3b87a42e500a6dc65dae1a55d0b641295971163e"
 
 [[projects]]
@@ -100,6 +106,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a547e1bc05f256777aed3bda68935c595a20a0e98aef396e4f20aef1927b3e5a"
+  inputs-digest = "0d9d00d277680f498770509dc5439fd9bb741fbbf465313b2a0c679b8fdd91c1"
   solver-name = "gps-cdcl"
   solver-version = 1
