@@ -11,18 +11,27 @@ import (
 type Config struct {
 	Address string
 	Port    string
+	Prefix  string
+	Dir     string
 	TLS     *TLS
+	Users   map[string]*UserInfo
 }
 
-// TLS allows specification of a certificate and private key file
+// TLS allows specification of a certificate and private key file.
 type TLS struct {
 	CertFile string
 	KeyFile  string
 }
 
+// UserInfo allows storing of a password and user directory.
+type UserInfo struct {
+	Password string
+	Dir      string
+}
+
 // ParseConfig parses the application configuration an sets defaults.
-func ParseConfig() Config {
-	var cfg Config
+func ParseConfig() *Config {
+	var cfg = &Config{}
 
 	setDefaults()
 	viper.SetConfigName("config")
@@ -56,5 +65,7 @@ func ParseConfig() Config {
 func setDefaults() {
 	viper.SetDefault("Address", "127.0.0.1")
 	viper.SetDefault("Port", "8000")
+	viper.SetDefault("Prefix", "")
+	viper.SetDefault("Dir", "/tmp")
 	viper.SetDefault("TLS", nil)
 }

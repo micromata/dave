@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  name = "github.com/abbot/go-http-auth"
+  packages = ["."]
+  revision = "0ddd408d5d60ea76e320503cc7dd091992dee608"
+  version = "v0.4.0"
+
+[[projects]]
   name = "github.com/fsnotify/fsnotify"
   packages = ["."]
   revision = "c2828203cd70a50dcccfb2761f8b1f8ceef9a8e9"
@@ -63,6 +69,12 @@
 
 [[projects]]
   branch = "master"
+  name = "golang.org/x/crypto"
+  packages = ["bcrypt","blowfish"]
+  revision = "b2aa35443fbc700ab74c586ae79b81c171851023"
+
+[[projects]]
+  branch = "master"
   name = "golang.org/x/net"
   packages = ["context","webdav","webdav/internal/xml"]
   revision = "61147c48b25b599e5b561d2e9c4f3e1ef489ca41"
@@ -88,6 +100,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "75f05f8972c0c4f13108f362676581e484253474b57d6fcc5f9ecb6c657acf2b"
+  inputs-digest = "a547e1bc05f256777aed3bda68935c595a20a0e98aef396e4f20aef1927b3e5a"
   solver-name = "gps-cdcl"
   solver-version = 1
