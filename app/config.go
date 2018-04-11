@@ -111,6 +111,11 @@ func (cfg *Config) updateConfig(e fsnotify.Event) {
 }
 
 func (cfg *Config) ensureUserDirs() {
+	if _, err := os.Stat(cfg.Dir); os.IsNotExist(err) {
+		os.Mkdir(cfg.Dir, os.ModePerm)
+		fmt.Printf("Created base dir: %s\n", cfg.Dir)
+	}
+
 	for username := range cfg.Users {
 		path := filepath.Join(cfg.Dir, username)
 		if _, err := os.Stat(path); os.IsNotExist(err) {
