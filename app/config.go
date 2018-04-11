@@ -5,6 +5,7 @@ import (
 	"github.com/spf13/viper"
 	"log"
 	"os"
+	"github.com/fsnotify/fsnotify"
 )
 
 // Config represents the configuration of the server application.
@@ -56,6 +57,39 @@ func ParseConfig() *Config {
 			log.Fatal(fmt.Errorf("TLS certFile doesn't exist: %s", err))
 		}
 	}
+
+	viper.WatchConfig()
+	viper.OnConfigChange(func(e fsnotify.Event) {
+		fmt.Println("Config file changed:", e.Name)
+
+		file, err := os.Open(e.Name)
+		if err != nil {
+			fmt.Println("Error reloading config", e.Name)
+		}
+
+		var updatedCfg = &Config{}
+		viper.ReadConfig(file)
+		viper.Unmarshal(&updatedCfg)
+
+		for k, _ := range cfg.Users {
+			if updatedCfg.Users[k] == nil {
+				fmt.Printf("Removed User from configuration: %s\n", k)
+				cfg.Users[k] = nil
+			}
+		}
+
+		for k, v := range updatedCfg.Users {
+			if cfg.Users[k] == nil {
+				fmt.Printf("Added User to configuration: %s\n", k)
+				cfg.Users[k] = v
+			} else {
+				if cfg.Users[k].Password != v.Password {
+					fmt.Printf("Updated password of user: %s\n", k)
+					cfg.Users[k].Password = v.Password
+				}
+			}
+		}
+	})
 
 	return cfg
 }

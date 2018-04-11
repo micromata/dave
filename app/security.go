@@ -16,7 +16,7 @@ func Authorize(config *Config) auth.SecretProvider {
 			return user.Password
 		}
 
-		fmt.Printf("Username not found: %s", username)
+		fmt.Printf("Username not found: %s\n", username)
 		return ""
 	}
 }
