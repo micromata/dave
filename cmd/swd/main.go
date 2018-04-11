@@ -17,8 +17,9 @@ func main() {
 			BaseDir: config.Dir,
 		},
 		LockSystem: webdav.NewMemLS(),
-		Logger:     app.ModificationLogHandler,
 	}
+
+	wdHandler.Logger = app.ModificationLogHandler
 
 	a := &app.App{
 		Config:  config,

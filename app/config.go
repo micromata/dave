@@ -2,10 +2,11 @@ package app
 
 import (
 	"fmt"
+	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
 	"log"
 	"os"
-	"github.com/fsnotify/fsnotify"
+	"path/filepath"
 )
 
 // Config represents the configuration of the server application.
@@ -59,37 +60,9 @@ func ParseConfig() *Config {
 	}
 
 	viper.WatchConfig()
-	viper.OnConfigChange(func(e fsnotify.Event) {
-		fmt.Println("Config file changed:", e.Name)
+	viper.OnConfigChange(cfg.updateConfig)
 
-		file, err := os.Open(e.Name)
-		if err != nil {
-			fmt.Println("Error reloading config", e.Name)
-		}
-
-		var updatedCfg = &Config{}
-		viper.ReadConfig(file)
-		viper.Unmarshal(&updatedCfg)
-
-		for k, _ := range cfg.Users {
-			if updatedCfg.Users[k] == nil {
-				fmt.Printf("Removed User from configuration: %s\n", k)
-				cfg.Users[k] = nil
-			}
-		}
-
-		for k, v := range updatedCfg.Users {
-			if cfg.Users[k] == nil {
-				fmt.Printf("Added User to configuration: %s\n", k)
-				cfg.Users[k] = v
-			} else {
-				if cfg.Users[k].Password != v.Password {
-					fmt.Printf("Updated password of user: %s\n", k)
-					cfg.Users[k].Password = v.Password
-				}
-			}
-		}
-	})
+	cfg.ensureUserDirs()
 
 	return cfg
 }
@@ -101,4 +74,48 @@ func setDefaults() {
 	viper.SetDefault("Prefix", "")
 	viper.SetDefault("Dir", "/tmp")
 	viper.SetDefault("TLS", nil)
+}
+
+func (cfg *Config) updateConfig(e fsnotify.Event) {
+	fmt.Println("Config file changed:", e.Name)
+
+	file, err := os.Open(e.Name)
+	if err != nil {
+		fmt.Println("Error reloading config", e.Name)
+	}
+
+	var updatedCfg = &Config{}
+	viper.ReadConfig(file)
+	viper.Unmarshal(&updatedCfg)
+
+	for username := range cfg.Users {
+		if updatedCfg.Users[username] == nil {
+			fmt.Printf("Removed User from configuration: %s\n", username)
+			cfg.Users[username] = nil
+		}
+	}
+
+	for username, v := range updatedCfg.Users {
+		if cfg.Users[username] == nil {
+			fmt.Printf("Added User to configuration: %s\n", username)
+			cfg.Users[username] = v
+		} else {
+			if cfg.Users[username].Password != v.Password {
+				fmt.Printf("Updated password of user: %s\n", username)
+				cfg.Users[username].Password = v.Password
+			}
+		}
+	}
+
+	cfg.ensureUserDirs()
+}
+
+func (cfg *Config) ensureUserDirs() {
+	for username := range cfg.Users {
+		path := filepath.Join(cfg.Dir, username)
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			os.Mkdir(path, os.ModePerm)
+			fmt.Printf("Created user dir: %s\n", path)
+		}
+	}
 }
