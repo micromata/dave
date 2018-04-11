@@ -13,13 +13,13 @@ func main() {
 
 	wdHandler := &webdav.Handler{
 		Prefix: config.Prefix,
-		FileSystem: &app.UserDir{
-			BaseDir: config.Dir,
+		FileSystem: &app.Dir{
+			Config: config,
 		},
 		LockSystem: webdav.NewMemLS(),
 	}
 
-	wdHandler.Logger = app.ModificationLogHandler
+	//wdHandler.Logger = app.ModificationLogHandler
 
 	a := &app.App{
 		Config:  config,

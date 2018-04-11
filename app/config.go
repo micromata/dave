@@ -28,6 +28,7 @@ type TLS struct {
 // UserInfo allows storing of a password and user directory.
 type UserInfo struct {
 	Password string
+	Subdir   *string
 }
 
 // ParseConfig parses the application configuration an sets defaults.
@@ -116,11 +117,13 @@ func (cfg *Config) ensureUserDirs() {
 		fmt.Printf("Created base dir: %s\n", cfg.Dir)
 	}
 
-	for username := range cfg.Users {
-		path := filepath.Join(cfg.Dir, username)
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			os.Mkdir(path, os.ModePerm)
-			fmt.Printf("Created user dir: %s\n", path)
+	for _, user := range cfg.Users {
+		if user.Subdir != nil {
+			path := filepath.Join(cfg.Dir, *user.Subdir)
+			if _, err := os.Stat(path); os.IsNotExist(err) {
+				os.Mkdir(path, os.ModePerm)
+				fmt.Printf("Created user dir: %s\n", path)
+			}
 		}
 	}
 }
