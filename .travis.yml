@@ -1,0 +1,13 @@
+language: go
+git:
+  depth: false
+go:
+  - 1.9.5
+  - "1.10.1"
+os:
+  - linux
+  - osx
+  - windows
+install:
+  - go get github.com/magefile/mage
+  - mage -v install
