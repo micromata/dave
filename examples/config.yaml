@@ -1,0 +1,9 @@
+address: "0.0.0.0"      # the bind address
+port: "8000"            # the listening port
+dir: "/home/webdav"     # the provided base dir
+users:
+  user:                 # with password 'foo' and jailed access to '/home/webdav/user'
+    password: "$2a$10$yITzSSNJZAdDZs8iVBQzkuZCzZ49PyjTiPIrmBUKUpB0pwX7eySvW"
+    subdir: "/user"
+  admin:                # with password 'foo' and access to '/home/webdav'
+    password: "$2a$10$DaWhagZaxWnWAOXY0a55.eaYccgtMOL3lGlqI3spqIBGyM0MD.EN6"
