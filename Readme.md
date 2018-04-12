@@ -28,7 +28,7 @@ It perfectly fits if you would like to give some people the possibility to uploa
 
 ## Configuration
 
-The configuration is done in form of a yaml file. swd will scan the following locations for the presence of a `config.yaml` in the following order:
+The configuration is done in form of a yaml file. _swd_ will scan the following locations for the presence of a `config.yaml` in the following order:
 
 - The directory `./config`
 - The directory `$HOME/.swd`
@@ -98,7 +98,7 @@ There is no need to restart the server itself. The config file will be re-read a
 
 ### Binary installation
 
-You can check out the releases page for the latest binaries or simply execute `go get -u github.com/micromata/swd` to install the binaries into your `$GOPATH/bin` directory.
+You can check out the [releases page](https://github.com/micromata/swd/releases) for the latest precompiled binaries.
 
 ### Build from sources
 
