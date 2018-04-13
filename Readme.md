@@ -19,6 +19,7 @@ It perfectly fits if you would like to give some people the possibility to uploa
 - [Configuration](#configuration)
   * [First steps](#first-steps)
   * [TLS](#tls)
+  * [Behind a proxy](#behind-a-proxy)
   * [User management](#user-management)
   * [Live reload](#live-reload)
 - [Installation](#installation)
@@ -76,6 +77,18 @@ Now you can reference your keypair in the configuration via:
 The presence of the `tls` section is completely enough to let the server start with a TLS secured https connection.
 
 In the current release version you must take care, that the private key doesn't need a passphrase. Otherwise starting the server will fail.
+
+### Behind a proxy
+
+If you'd like to move your setup behind a proxy / gateway under a specific path, you can set the config variable `prefix` to match the url-prefix of your proxy configuration.
+
+For example: If you have a rule that proxies all requests of `https://domain.com/webdav` to `https://localhost:8000`, you have to set the prefix to `/webdav`.
+
+		address: "127.0.0.1"    # the bind address
+		port: "8000"            # the listening port
+		prefix: "/webdav"       # the url-prefix of the original url
+		dir: "/home/webdav"     # the provided base directory
+		...
 
 ### User management
 
