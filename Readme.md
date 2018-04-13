@@ -21,7 +21,6 @@ It perfectly fits if you would like to give some people the possibility to uploa
 - [Installation](#installation)
   * [Binary-Installation](#binary-installation)
   * [Build from sources](#build-from-sources)
-  * [Build with docker](#build-with-docker)
 - [Connecting](#connecting)
 - [Contributing](#contributing)
 - [License](#license)
