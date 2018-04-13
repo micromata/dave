@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/micromata/swd.svg?branch=master)](https://travis-ci.org/micromata/swd)
+[![Go Report](https://goreportcard.com/badge/github.com/micromata/swd)](https://goreportcard.com/report/github.com/micromata/swd)
+
 # swd - The simple webdav server
 
 *swd* is a simple webdav server that provides the following features:
@@ -69,7 +72,7 @@ Now you can reference your keypair in the configuration via:
 		  certFile: cert.pem
 		users:
 		...
-		
+
 The presence of the `tls` section is completely enough to let the server start with a TLS secured https connection.
 
 In the current release version you must take care, that the private key doesn't need a passphrase. Otherwise starting the server will fail.
@@ -113,7 +116,7 @@ You can use the plain go toolchain and install the project to your `$GOPATH` via
 
 #### magefile
 
-You can also use mage to build the project. 
+You can also use mage to build the project.
 
 Please ensure you've got [mage](https://magefile.org) installed. This can be done with the following steps:
 
