@@ -94,18 +94,18 @@ For example: If you have a rule that proxies all requests of `https://domain.com
 
 User management in *swd* is very simple. Each user in the `config.yaml` MUST have a password and CAN have a subdirectory.
 
-The password must be in form of an BCrypt hash. You can generate one calling the shipped cli tool `swdcli passwd`.
+The password must be in form of a BCrypt hash. You can generate one calling the shipped cli tool `swdcli passwd`.
 
-If an subdirectory is configured for an user, the user is jailed within it and can't see anything that exists outside of this directory. If no subdirectory is configured for an user, the user can see and modify all files within the base directory.
+If a subdirectory is configured for a user, the user is jailed within it and can't see anything that exists outside of this directory. If no subdirectory is configured for an user, the user can see and modify all files within the base directory.
 
 ### Live reload
 
 If you're editing the user section of the configuration to:
 
-- Remove an user
-- Add an user
-- Add, remove or change an user's subdirectory
-- Update an users password
+- Remove a user
+- Add a user
+- Add, remove or change a user's subdirectory
+- Update a users password
 
 There is no need to restart the server itself. The config file will be re-read and the application will update it's own configuration silently in background.
 
