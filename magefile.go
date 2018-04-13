@@ -143,9 +143,6 @@ func Install() error {
 // InstallDeps Runs dep ensure and installs additional dependencies.
 func InstallDeps() error {
 	fmt.Println("Installing Deps...")
-
-	exec.Command("go", "get", "-u", "github.com/golang/dep/cmd/dep")
-
 	err := exec.Command("dep", "ensure").Run()
 	if err != nil {
 		return err
