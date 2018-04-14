@@ -67,7 +67,7 @@ func BuildReleases() error {
 			swd,
 			swdCli,
 			"Readme.md",
-			filepath.Join("examples", "config.yaml"),
+			filepath.Join("examples", "config-sample.yaml"),
 		}
 
 		archiveName := fmt.Sprintf("swd-%s-%s.zip", t.goos, t.goarch)

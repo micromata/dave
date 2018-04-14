@@ -1,0 +1,54 @@
+# ---------------------------------- Network -----------------------------------
+#
+# The bind address to use
+#
+address: "0.0.0.0"
+#
+# The listening port
+#
+port: "8000"
+
+
+# ---------------------------- Transport security ------------------------------
+#tls:
+#  keyFile: key.pem
+#  certFile: cert.pem
+# ------------------------
+
+
+# ---------------------------------- Content -----------------------------------
+#
+# The provided base dir
+#
+dir: "/tmp"
+
+
+# ----------------------------------- Users ------------------------------------
+#
+# A list of user definitions
+#
+users:
+  #
+  # user with username 'user', password 'foo' and jailed access to '/tmp/user'
+  #
+  user:
+    password: "$2a$10$yITzSSNJZAdDZs8iVBQzkuZCzZ49PyjTiPIrmBUKUpB0pwX7eySvW"
+    subdir: "/user"
+
+  #
+  # user with username 'admin', password 'foo' and access to '/tmp'
+  #
+  admin:
+    password: "$2a$10$yITzSSNJZAdDZs8iVBQzkuZCzZ49PyjTiPIrmBUKUpB0pwX7eySvW"
+
+
+# ---------------------------------- Logging -----------------------------------
+#
+# Seperated loglevels for file / directory operations. All set to false per
+# default.
+#
+#log:
+#  create: true
+#  read: true
+#  update: true
+#  delete: true
