@@ -21,6 +21,7 @@ It perfectly fits if you would like to give some people the possibility to uploa
   * [TLS](#tls)
   * [Behind a proxy](#behind-a-proxy)
   * [User management](#user-management)
+  * [Logging](#logging)
   * [Live reload](#live-reload)
 - [Installation](#installation)
   * [Binary-Installation](#binary-installation)
@@ -41,15 +42,15 @@ The configuration is done in form of a yaml file. _swd_ will scan the following 
 
 Here an example of a very simple but functional configuration:
 
-		address: "127.0.0.1"    # the bind address
-		port: "8000"            # the listening port
-		dir: "/home/webdav"     # the provided base dir
-		users:
-		  user:                 # with password 'foo' and jailed access to '/home/webdav/user'
-		    password: "$2a$10$yITzSSNJZAdDZs8iVBQzkuZCzZ49PyjTiPIrmBUKUpB0pwX7eySvW"
-		    subdir: "/user"
-		  admin:                # with password 'foo' and access to '/home/webdav'
-		    password: "$2a$10$DaWhagZaxWnWAOXY0a55.eaYccgtMOL3lGlqI3spqIBGyM0MD.EN6"
+	address: "127.0.0.1"    # the bind address
+	port: "8000"            # the listening port
+	dir: "/home/webdav"     # the provided base dir
+	users:
+	  user:                 # with password 'foo' and jailed access to '/home/webdav/user'
+	    password: "$2a$10$yITzSSNJZAdDZs8iVBQzkuZCzZ49PyjTiPIrmBUKUpB0pwX7eySvW"
+	    subdir: "/user"
+	  admin:                # with password 'foo' and access to '/home/webdav'
+	    password: "$2a$10$DaWhagZaxWnWAOXY0a55.eaYccgtMOL3lGlqI3spqIBGyM0MD.EN6"
 
 
 ### TLS
@@ -58,21 +59,21 @@ At first, use your favorite toolchain to obtain a SSL certificate and keyfile (i
 
 Here an example with `openssl`:
 
-		# Generate a keypair
-		openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365
-		# Remove the passphrase from the key file
-		openssl rsa -in key.pem -out clean_key.pem
+	# Generate a keypair
+	openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365
+	# Remove the passphrase from the key file
+	openssl rsa -in key.pem -out clean_key.pem
 
 Now you can reference your keypair in the configuration via:
 
-		address: "127.0.0.1"    # the bind address
-		port: "8000"            # the listening port
-		dir: "/home/webdav"     # the provided base directory
-		tls:
-		  keyFile: clean_key.pem
-		  certFile: cert.pem
-		users:
-		...
+	address: "127.0.0.1"    # the bind address
+	port: "8000"            # the listening port
+	dir: "/home/webdav"     # the provided base directory
+	tls:
+	  keyFile: clean_key.pem
+	  certFile: cert.pem
+	users:
+	...
 
 The presence of the `tls` section is completely enough to let the server start with a TLS secured https connection.
 
@@ -84,11 +85,11 @@ If you'd like to move your setup behind a proxy / gateway under a specific path,
 
 For example: If you have a rule that proxies all requests of `https://domain.com/webdav` to `https://localhost:8000`, you have to set the prefix to `/webdav`.
 
-		address: "127.0.0.1"    # the bind address
-		port: "8000"            # the listening port
-		prefix: "/webdav"       # the url-prefix of the original url
-		dir: "/home/webdav"     # the provided base directory
-		...
+	address: "127.0.0.1"    # the bind address
+	port: "8000"            # the listening port
+	prefix: "/webdav"       # the url-prefix of the original url
+	dir: "/home/webdav"     # the provided base directory
+	...
 
 ### User management
 
@@ -98,16 +99,41 @@ The password must be in form of a BCrypt hash. You can generate one calling the 
 
 If a subdirectory is configured for a user, the user is jailed within it and can't see anything that exists outside of this directory. If no subdirectory is configured for an user, the user can see and modify all files within the base directory.
 
+### Logging
+
+You can enable / disable logging for the following operations:
+
+- **C**reation of files or directories
+- **R**eading of files or directories
+- **U**pdating of files or directories
+- **D**eletion of files or directories
+
+All logs are disabled per default until you will turn it on via the following config entries:
+
+	address: "127.0.0.1"    # the bind address
+	port: "8000"            # the listening port
+	dir: "/home/webdav"     # the provided base directory
+	log:
+	  create: true
+	  read: true
+	  update: true
+	  delete: true
+	...
+
+Be aware, that the log pattern of an attached tty differs from the log pattern of a detached tty.
+
+Example of an attached tty:
+	
+	INFO[0000] Server is starting and listening              address=0.0.0.0 port=8000 security=none
+
+Example of a detached tty:
+
+	time="2018-04-14T20:46:00+02:00" level=info msg="Server is starting and listening" address=0.0.0.0 port=8000 security=none
+
 ### Live reload
 
-If you're editing the user section of the configuration to:
+There is no need to restart the server itself, if you're editing the user or log section of the configuration. The config file will be re-read and the application will update it's own configuration silently in background.
 
-- Remove a user
-- Add a user
-- Add, remove or change a user's subdirectory
-- Update a users password
-
-There is no need to restart the server itself. The config file will be re-read and the application will update it's own configuration silently in background.
 
 ## Installation
 
@@ -119,7 +145,7 @@ You can check out the [releases page](https://github.com/micromata/swd/releases)
 
 At first you have to clone the repository with:
 
-		git clone git@github.com:micromata/swd.git
+	git clone git@github.com:micromata/swd.git
 
 To build and install from sources you have two major possibilites:
 
@@ -133,20 +159,20 @@ You can also use mage to build the project.
 
 Please ensure you've got [mage](https://magefile.org) installed. This can be done with the following steps:
 
-		go get -u -d github.com/magefile/mage
-		cd $GOPATH/src/github.com/magefile/mage
-		go run bootstrap.go
+	go get -u -d github.com/magefile/mage
+	cd $GOPATH/src/github.com/magefile/mage
+	go run bootstrap.go
 
 Now you can call `mage install` to build and install the binaries. If you just call `mage`, you'll get a list of possible targets:
 
-		Targets:
-		  build            Builds swd and swdcli and moves it to the dist directory
-		  buildReleases    Builds swd and swdcli for different OS and package them to a zip file for each os
-		  check            Runs golint and go tool vet on each .go file.
-		  clean            Removes the dist directory
-		  fmt              Formats the code via gofmt
-		  install          Installs swd and swdcli to your $GOPATH/bin folder
-		  installDeps      Runs dep ensure and installs additional dependencies.
+	Targets:
+	  build            Builds swd and swdcli and moves it to the dist directory
+	  buildReleases    Builds swd and swdcli for different OS and package them to a zip file for each os
+	  check            Runs golint and go tool vet on each .go file.
+	  clean            Removes the dist directory
+	  fmt              Formats the code via gofmt
+	  install          Installs swd and swdcli to your $GOPATH/bin folder
+	  installDeps      Runs dep ensure and installs additional dependencies.
 
 ## Connecting
 
@@ -162,8 +188,8 @@ to get an idea of it.
 
 If you'd like to contribute, please make sure to use the [magefile](#magefile) and execute and check the following commands before starting a PR:
 
-		mage fmt
-		mage check
+	mage fmt
+	mage check
 
 If you've got an idea of a function that should find it's way into this
 project, but you won't implement it by yourself, please create a new

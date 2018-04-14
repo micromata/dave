@@ -2,8 +2,8 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"github.com/abbot/go-http-auth"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 )
 
@@ -16,7 +16,7 @@ func Authorize(config *Config) auth.SecretProvider {
 			return user.Password
 		}
 
-		fmt.Printf("Username not found: %s\n", username)
+		log.WithField("user", username).Warn("Username not found")
 		return ""
 	}
 }

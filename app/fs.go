@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"github.com/abbot/go-http-auth"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/webdav"
 	"os"
 	"path"
@@ -16,6 +17,15 @@ import (
 // user to allow configuration access.
 type Dir struct {
 	Config *Config
+}
+
+func (d Dir) resolveUser(ctx context.Context) string {
+	authInfo := auth.FromContext(ctx)
+	if authInfo != nil && authInfo.Authenticated {
+		return authInfo.Username
+	}
+
+	return ""
 }
 
 // resolve tries to gain authentication information and suffixes the BaseDir with the
@@ -48,7 +58,19 @@ func (d Dir) Mkdir(ctx context.Context, name string, perm os.FileMode) error {
 	if name = d.resolve(ctx, name); name == "" {
 		return os.ErrNotExist
 	}
-	return os.Mkdir(name, perm)
+	err := os.Mkdir(name, perm)
+	if err != nil {
+		return err
+	}
+
+	if d.Config.Log.Create {
+		log.WithFields(log.Fields{
+			"path": name,
+			"user": d.resolveUser(ctx),
+		}).Info("Created directory")
+	}
+
+	return err
 }
 
 // OpenFile resolves the physical file and delegates this to an os.OpenFile execution
@@ -60,6 +82,14 @@ func (d Dir) OpenFile(ctx context.Context, name string, flag int, perm os.FileMo
 	if err != nil {
 		return nil, err
 	}
+
+	if d.Config.Log.Read {
+		log.WithFields(log.Fields{
+			"path": name,
+			"user": d.resolveUser(ctx),
+		}).Info("Opened file")
+	}
+
 	return f, nil
 }
 
@@ -72,7 +102,20 @@ func (d Dir) RemoveAll(ctx context.Context, name string) error {
 		// Prohibit removing the virtual root directory.
 		return os.ErrInvalid
 	}
-	return os.RemoveAll(name)
+
+	err := os.RemoveAll(name)
+	if err != nil {
+		return err
+	}
+
+	if d.Config.Log.Delete {
+		log.WithFields(log.Fields{
+			"path": name,
+			"user": d.resolveUser(ctx),
+		}).Info("Deleted file or directory")
+	}
+
+	return nil
 }
 
 // Rename resolves the physical file and delegates this to an os.Rename execution
@@ -87,7 +130,21 @@ func (d Dir) Rename(ctx context.Context, oldName, newName string) error {
 		// Prohibit renaming from or to the virtual root directory.
 		return os.ErrInvalid
 	}
-	return os.Rename(oldName, newName)
+
+	err := os.Rename(oldName, newName)
+	if err != nil {
+		return err
+	}
+
+	if d.Config.Log.Update {
+		log.WithFields(log.Fields{
+			"oldPath": oldName,
+			"newPath": newName,
+			"user":    d.resolveUser(ctx),
+		}).Info("Renamed file or directory")
+	}
+
+	return nil
 }
 
 // Stat resolves the physical file and delegates this to an os.Stat execution

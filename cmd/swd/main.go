@@ -3,12 +3,14 @@ package main
 import (
 	"fmt"
 	"github.com/micromata/swd/app"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/webdav"
-	"log"
 	"net/http"
 )
 
 func main() {
+	log.SetFormatter(&log.TextFormatter{})
+
 	config := app.ParseConfig()
 
 	wdHandler := &webdav.Handler{
@@ -18,8 +20,6 @@ func main() {
 		},
 		LockSystem: webdav.NewMemLS(),
 	}
-
-	//wdHandler.Logger = app.ModificationLogHandler
 
 	a := &app.App{
 		Config:  config,
@@ -31,10 +31,18 @@ func main() {
 	connAddr := fmt.Sprintf("%s:%s", config.Address, config.Port)
 
 	if config.TLS != nil {
-		fmt.Printf("TLS Server is starting and listening at: %s\n", connAddr)
+		log.WithFields(log.Fields{
+			"address":  config.Address,
+			"port":     config.Port,
+			"security": "TLS",
+		}).Info("Server is starting and listening")
 		log.Fatal(http.ListenAndServeTLS(connAddr, config.TLS.CertFile, config.TLS.KeyFile, nil))
 	} else {
-		fmt.Printf("Server is starting and listening at: %s\n", connAddr)
+		log.WithFields(log.Fields{
+			"address":  config.Address,
+			"port":     config.Port,
+			"security": "none",
+		}).Info("Server is starting and listening")
 		log.Fatal(http.ListenAndServe(connAddr, nil))
 	}
 }

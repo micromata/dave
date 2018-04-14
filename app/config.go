@@ -3,8 +3,8 @@ package app
 import (
 	"fmt"
 	"github.com/fsnotify/fsnotify"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"log"
 	"os"
 	"path/filepath"
 )
@@ -16,7 +16,16 @@ type Config struct {
 	Prefix  string
 	Dir     string
 	TLS     *TLS
+	Log     Logging
 	Users   map[string]*UserInfo
+}
+
+// Logging allows definition for logging each CRUD method.
+type Logging struct {
+	Create bool
+	Read   bool
+	Update bool
+	Delete bool
 }
 
 // TLS allows specification of a certificate and private key file.
@@ -75,14 +84,18 @@ func setDefaults() {
 	viper.SetDefault("Prefix", "")
 	viper.SetDefault("Dir", "/tmp")
 	viper.SetDefault("TLS", nil)
+	viper.SetDefault("Log.Create", false)
+	viper.SetDefault("Log.Read", false)
+	viper.SetDefault("Log.Update", false)
+	viper.SetDefault("Log.Delete", false)
 }
 
 func (cfg *Config) updateConfig(e fsnotify.Event) {
-	fmt.Println("Config file changed:", e.Name)
+	log.WithField("path", e.Name).Info("Config file changed")
 
 	file, err := os.Open(e.Name)
 	if err != nil {
-		fmt.Println("Error reloading config", e.Name)
+		log.WithField("path", e.Name).Warn("Error reloading config")
 	}
 
 	var updatedCfg = &Config{}
@@ -91,30 +104,50 @@ func (cfg *Config) updateConfig(e fsnotify.Event) {
 
 	for username := range cfg.Users {
 		if updatedCfg.Users[username] == nil {
-			fmt.Printf("Removed User from configuration: %s\n", username)
+			log.WithField("user", username).Info("Removed User from configuration")
 			cfg.Users[username] = nil
 		}
 	}
 
 	for username, v := range updatedCfg.Users {
 		if cfg.Users[username] == nil {
-			fmt.Printf("Added User to configuration: %s\n", username)
+			log.WithField("user", username).Info("Added User to configuration")
 			cfg.Users[username] = v
 		} else {
 			if cfg.Users[username].Password != v.Password {
-				fmt.Printf("Updated password of user: %s\n", username)
+				log.WithField("user", username).Info("Updated password of user")
 				cfg.Users[username].Password = v.Password
 			}
 		}
 	}
 
 	cfg.ensureUserDirs()
+
+	if cfg.Log.Create != updatedCfg.Log.Create {
+		cfg.Log.Create = updatedCfg.Log.Create
+		log.WithField("enabled", cfg.Log.Create).Info("Set logging for create operations")
+	}
+
+	if cfg.Log.Read != updatedCfg.Log.Read {
+		cfg.Log.Read = updatedCfg.Log.Read
+		log.WithField("enabled", cfg.Log.Read).Info("Set logging for read operations")
+	}
+
+	if cfg.Log.Update != updatedCfg.Log.Update {
+		cfg.Log.Update = updatedCfg.Log.Update
+		log.WithField("enabled", cfg.Log.Update).Info("Set logging for update operations")
+	}
+
+	if cfg.Log.Delete != updatedCfg.Log.Delete {
+		cfg.Log.Delete = updatedCfg.Log.Delete
+		log.WithField("enabled", cfg.Log.Delete).Info("Set logging for delete operations")
+	}
 }
 
 func (cfg *Config) ensureUserDirs() {
 	if _, err := os.Stat(cfg.Dir); os.IsNotExist(err) {
 		os.Mkdir(cfg.Dir, os.ModePerm)
-		fmt.Printf("Created base dir: %s\n", cfg.Dir)
+		log.WithField("path", cfg.Dir).Info("Created base dir")
 	}
 
 	for _, user := range cfg.Users {
@@ -122,7 +155,7 @@ func (cfg *Config) ensureUserDirs() {
 			path := filepath.Join(cfg.Dir, *user.Subdir)
 			if _, err := os.Stat(path); os.IsNotExist(err) {
 				os.Mkdir(path, os.ModePerm)
-				fmt.Printf("Created user dir: %s\n", path)
+				log.WithField("path", path).Info("Created user dir")
 			}
 		}
 	}
