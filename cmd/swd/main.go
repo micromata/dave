@@ -19,6 +19,11 @@ func main() {
 			Config: config,
 		},
 		LockSystem: webdav.NewMemLS(),
+		Logger: func(request *http.Request, err error) {
+			if err != nil {
+				log.Error(err)
+			}
+		},
 	}
 
 	a := &app.App{
