@@ -48,10 +48,11 @@ users:
 # ---------------------------------- Logging -----------------------------------
 #
 # Seperated loglevels for file / directory operations. All set to false per
-# default.
+# default instead of error log. The error log is set to true per default.
 #
 #log:
-#  create: true
-#  read: true
-#  update: true
-#  delete: true
+#  error: true
+#  create: false
+#  read: false
+#  update: false
+#  delete: falst

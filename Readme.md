@@ -32,7 +32,9 @@ It perfectly fits if you would like to give some people the possibility to uploa
 
 ## Configuration
 
-The configuration is done in form of a yaml file. _swd_ will scan the following locations for the presence of a `config.yaml` in the following order:
+The configuration is done in form of a yaml file. _swd_ will scan the
+following locations for the presence of a `config.yaml` in the following
+order:
 
 - The directory `./config`
 - The directory `$HOME/.swd`
@@ -45,6 +47,7 @@ Here an example of a very simple but functional configuration:
 	address: "127.0.0.1"    # the bind address
 	port: "8000"            # the listening port
 	dir: "/home/webdav"     # the provided base dir
+	prefix: "/webdav"       # the url-prefix of the original url
 	users:
 	  user:                 # with password 'foo' and jailed access to '/home/webdav/user'
 	    password: "$2a$10$yITzSSNJZAdDZs8iVBQzkuZCzZ49PyjTiPIrmBUKUpB0pwX7eySvW"
@@ -52,10 +55,13 @@ Here an example of a very simple but functional configuration:
 	  admin:                # with password 'foo' and access to '/home/webdav'
 	    password: "$2a$10$DaWhagZaxWnWAOXY0a55.eaYccgtMOL3lGlqI3spqIBGyM0MD.EN6"
 
+With this configuration you'll grant access for two users and the webdav
+server is available under `http://127.0.0.1:8000/webdav`.
 
 ### TLS
 
-At first, use your favorite toolchain to obtain a SSL certificate and keyfile (if you don't  already have some).
+At first, use your favorite toolchain to obtain a SSL certificate and
+keyfile (if you don't  already have some).
 
 Here an example with `openssl`:
 
@@ -75,21 +81,21 @@ Now you can reference your keypair in the configuration via:
 	users:
 	...
 
-The presence of the `tls` section is completely enough to let the server start with a TLS secured https connection.
+The presence of the `tls` section is completely enough to let the server
+start with a TLS secured https connection.
 
-In the current release version you must take care, that the private key doesn't need a passphrase. Otherwise starting the server will fail.
+In the current release version you must take care, that the private key
+doesn't need a passphrase. Otherwise starting the server will fail.
 
 ### Behind a proxy
 
-If you'd like to move your setup behind a proxy / gateway under a specific path, you can set the config variable `prefix` to match the url-prefix of your proxy configuration.
+_swd_ will also work behind a reverse proxy. Here is an example
+configuration with `apache2 httpd`'s `mod_proxy`:
 
-For example: If you have a rule that proxies all requests of `https://domain.com/webdav` to `https://localhost:8000`, you have to set the prefix to `/webdav`.
-
-	address: "127.0.0.1"    # the bind address
-	port: "8000"            # the listening port
-	prefix: "/webdav"       # the url-prefix of the original url
-	dir: "/home/webdav"     # the provided base directory
-	...
+    <Location /webdav>
+      ProxyPass           https://webdav-host:8000/
+      ProxyPassReverse    https://webdav-host:8000/
+    </Location>
 
 ### User management
 
@@ -108,22 +114,27 @@ You can enable / disable logging for the following operations:
 - **U**pdating of files or directories
 - **D**eletion of files or directories
 
-All logs are disabled per default until you will turn it on via the following config entries:
+You can also enable or disable the error log.
 
-	address: "127.0.0.1"    # the bind address
-	port: "8000"            # the listening port
-	dir: "/home/webdav"     # the provided base directory
-	log:
-	  create: true
-	  read: true
-	  update: true
-	  delete: true
-	...
+All file-operation logs are disabled per default until you will turn it on via the following config entries:
+
+```yaml
+address: "127.0.0.1"    # the bind address
+port: "8000"            # the listening port
+dir: "/home/webdav"     # the provided base directory
+log:
+  error: true
+  create: true
+  read: true
+  update: true
+  delete: true
+...
+```
 
 Be aware, that the log pattern of an attached tty differs from the log pattern of a detached tty.
 
 Example of an attached tty:
-	
+
 	INFO[0000] Server is starting and listening              address=0.0.0.0 port=8000 security=none
 
 Example of a detached tty:

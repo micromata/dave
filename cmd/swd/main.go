@@ -20,7 +20,7 @@ func main() {
 		},
 		LockSystem: webdav.NewMemLS(),
 		Logger: func(request *http.Request, err error) {
-			if err != nil {
+			if config.Log.Error && err != nil {
 				log.Error(err)
 			}
 		},

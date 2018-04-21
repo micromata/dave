@@ -22,6 +22,7 @@ type Config struct {
 
 // Logging allows definition for logging each CRUD method.
 type Logging struct {
+	Error  bool
 	Create bool
 	Read   bool
 	Update bool
@@ -84,6 +85,7 @@ func setDefaults() {
 	viper.SetDefault("Prefix", "")
 	viper.SetDefault("Dir", "/tmp")
 	viper.SetDefault("TLS", nil)
+	viper.SetDefault("Log.Error", true)
 	viper.SetDefault("Log.Create", false)
 	viper.SetDefault("Log.Read", false)
 	viper.SetDefault("Log.Update", false)
