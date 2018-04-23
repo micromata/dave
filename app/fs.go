@@ -46,7 +46,7 @@ func (d Dir) resolve(ctx context.Context, name string) string {
 	if authInfo != nil && authInfo.Authenticated {
 		userInfo := d.Config.Users[authInfo.Username]
 		if userInfo != nil && userInfo.Subdir != nil {
-			return filepath.Join(dir, authInfo.Username, filepath.FromSlash(path.Clean("/"+name)))
+			return filepath.Join(dir, *userInfo.Subdir, filepath.FromSlash(path.Clean("/"+name)))
 		}
 	}
 
