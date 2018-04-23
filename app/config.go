@@ -107,7 +107,7 @@ func (cfg *Config) updateConfig(e fsnotify.Event) {
 	for username := range cfg.Users {
 		if updatedCfg.Users[username] == nil {
 			log.WithField("user", username).Info("Removed User from configuration")
-			cfg.Users[username] = nil
+			delete(cfg.Users, username)
 		}
 	}
 
