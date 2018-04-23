@@ -152,17 +152,32 @@ There is no need to restart the server itself, if you're editing the user or log
 
 You can check out the [releases page](https://github.com/micromata/swd/releases) for the latest precompiled binaries.
 
-### Build from sources
+### Build from sources 
 
-At first you have to clone the repository with:
+#### Setup
 
-	git clone git@github.com:micromata/swd.git
+1. Ensure you've setup _go_ Take a look at the [installation guide](https://golang.org/doc/install) and how you [setup your path](https://github.com/golang/go/wiki/SettingGOPATH)
+2. Create a source directory and change your working directory
+
+```
+mkdir -p $GOPATH/src/github.com/micromata/ && cd $GOPATH/src/github.com/micromata
+```
+
+3. Clone the repository (or your fork)
+
+```
+git clone git@github.com:micromata/swd.git
+```
 
 To build and install from sources you have two major possibilites:
 
 #### go install
 
-You can use the plain go toolchain and install the project to your `$GOPATH` via: `go install ./...`.
+You can use the plain go toolchain and install the project to your `$GOPATH` via: 
+
+```
+cd $GOPATH/src/github.com/micromata/swd && go install ./...
+```
 
 #### magefile
 
