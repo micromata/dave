@@ -6,6 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/webdav"
 	"net/http"
+	"errors"
 )
 
 func main() {
@@ -31,7 +32,7 @@ func main() {
 		Handler: wdHandler,
 	}
 
-	http.Handle("/", app.NewBasicAuthWebdavHandler(a))
+	http.Handle("/", wrapRecovery(app.NewBasicAuthWebdavHandler(a)))
 
 	connAddr := fmt.Sprintf("%s:%s", config.Address, config.Port)
 
@@ -50,4 +51,26 @@ func main() {
 		}).Info("Server is starting and listening")
 		log.Fatal(http.ListenAndServe(connAddr, nil))
 	}
+}
+
+func wrapRecovery(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var err error
+		defer func() {
+			r := recover()
+			switch t := r.(type) {
+			case string:
+				err = errors.New(t)
+			case error:
+				err = t
+			default:
+				err = errors.New("Unknown error")
+			}
+
+			log.WithError(err).Error("An error occurred handling a webdav request")
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+		}()
+
+		handler.ServeHTTP(w, r)
+	})
 }
