@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/viper"
 	"os"
 	"path/filepath"
+	"errors"
 )
 
 // Config represents the configuration of the server application.
@@ -93,6 +94,21 @@ func setDefaults() {
 }
 
 func (cfg *Config) updateConfig(e fsnotify.Event) {
+	var err error
+	defer func() {
+		r := recover()
+		switch t := r.(type) {
+		case string:
+			err = errors.New(t)
+		case error:
+			err = t
+		default:
+			err = errors.New("Unknown error")
+		}
+
+		log.WithError(err).Error("Error updating configuration. Please restart the server...")
+	}()
+
 	log.WithField("path", e.Name).Info("Config file changed")
 
 	file, err := os.Open(e.Name)
