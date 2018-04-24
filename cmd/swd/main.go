@@ -55,20 +55,15 @@ func main() {
 
 func wrapRecovery(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var err error
 		defer func() {
-			r := recover()
-			switch t := r.(type) {
-			case string:
-				err = errors.New(t)
-			case error:
-				err = t
-			default:
-				err = errors.New("Unknown error")
+			if err := recover(); err != nil {
+				switch t := err.(type) {
+				case string:
+					log.WithError(errors.New(t)).Error("An error occurred handling a webdav request")
+				case error:
+					log.WithError(t).Error("An error occurred handling a webdav request")
+				}
 			}
-
-			log.WithError(err).Error("An error occurred handling a webdav request")
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
 		}()
 
 		handler.ServeHTTP(w, r)
