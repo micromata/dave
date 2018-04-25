@@ -1,18 +1,28 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/micromata/swd/app"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/webdav"
+	syslog "log"
 	"net/http"
-	"errors"
 )
 
 func main() {
-	log.SetFormatter(&log.TextFormatter{})
-
 	config := app.ParseConfig()
+
+	// Set formatter for logrus
+	formatter := &log.TextFormatter{}
+	log.SetFormatter(formatter)
+
+	// Set formatter for default log outputs
+	logger := log.New()
+	logger.Formatter = formatter
+	writer := logger.Writer()
+	defer writer.Close()
+	syslog.SetOutput(writer)
 
 	wdHandler := &webdav.Handler{
 		Prefix: config.Prefix,
@@ -33,7 +43,6 @@ func main() {
 	}
 
 	http.Handle("/", wrapRecovery(app.NewBasicAuthWebdavHandler(a)))
-
 	connAddr := fmt.Sprintf("%s:%s", config.Address, config.Port)
 
 	if config.TLS != nil {
@@ -43,6 +52,7 @@ func main() {
 			"security": "TLS",
 		}).Info("Server is starting and listening")
 		log.Fatal(http.ListenAndServeTLS(connAddr, config.TLS.CertFile, config.TLS.KeyFile, nil))
+
 	} else {
 		log.WithFields(log.Fields{
 			"address":  config.Address,
