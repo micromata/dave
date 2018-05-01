@@ -99,14 +99,10 @@ func (cfg *Config) updateConfig(e fsnotify.Event) {
 		r := recover()
 		switch t := r.(type) {
 		case string:
-			err = errors.New(t)
+			log.WithError(errors.New(t)).Error("Error updating configuration. Please restart the server...")
 		case error:
-			err = t
-		default:
-			err = errors.New("Unknown error")
+			log.WithError(t).Error("Error updating configuration. Please restart the server...")
 		}
-
-		log.WithError(err).Error("Error updating configuration. Please restart the server...")
 	}()
 
 	log.WithField("path", e.Name).Info("Config file changed")
@@ -135,6 +131,10 @@ func (cfg *Config) updateConfig(e fsnotify.Event) {
 			if cfg.Users[username].Password != v.Password {
 				log.WithField("user", username).Info("Updated password of user")
 				cfg.Users[username].Password = v.Password
+			}
+			if cfg.Users[username].Subdir != v.Subdir {
+				log.WithField("user", username).Info("Updated subdir of user")
+				cfg.Users[username].Subdir = v.Subdir
 			}
 		}
 	}
