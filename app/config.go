@@ -50,7 +50,7 @@ func ParseConfig() *Config {
 	viper.SetConfigName("config")
 	viper.AddConfigPath("./config")
 	viper.AddConfigPath("$HOME/.swd")
-	viper.AddConfigPath("$HOME/.daffy")
+	viper.AddConfigPath("$HOME/.dave")
 	viper.AddConfigPath(".")
 
 	err := viper.ReadInConfig()

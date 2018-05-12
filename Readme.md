@@ -1,9 +1,9 @@
-[![Build Status](https://travis-ci.org/micromata/daffy.svg?branch=master)](https://travis-ci.org/micromata/daffy)
-[![Go Report](https://goreportcard.com/badge/github.com/micromata/daffy)](https://goreportcard.com/report/github.com/micromata/daffy)
+[![Build Status](https://travis-ci.org/micromata/dave.svg?branch=master)](https://travis-ci.org/micromata/dave)
+[![Go Report](https://goreportcard.com/badge/github.com/micromata/dave)](https://goreportcard.com/report/github.com/micromata/dave)
 
-# daffy - The simple webdav server
+# dave - The simple webdav server
 
-*daffy* is a simple webdav server that provides the following features:
+_dave_ is a simple webdav server that provides the following features:
 
 - Single binary that runs under Windows, Linux and OSX.
 - Authentication via HTTP-Basic.
@@ -13,6 +13,8 @@
 - A cli tool to generate BCrypt password hashes.
 
 It perfectly fits if you would like to give some people the possibility to upload, download or share files with common tools like the OSX Finder, Windows Explorer or Nautilus under Linux ([or many other tools](https://en.wikipedia.org/wiki/Comparison_of_WebDAV_software#WebDAV_clients)).
+
+The project name _dave_ is an abbreviation for: **D**istributed **A**uthoring and **V**ersioning made **e**asy.
 
 ## Table of Contents
 
@@ -37,7 +39,8 @@ following locations for the presence of a `config.yaml` in the following
 order:
 
 - The directory `./config`
-- The directory `$HOME/.daffy`
+- The directory `$HOME/.swd` (swd was the initial project name of dave)
+- The directory `$HOME/.dave`
 - The current working directory `.`
 
 ### First steps
@@ -99,9 +102,9 @@ configuration with `apache2 httpd`'s `mod_proxy`:
 
 ### User management
 
-User management in *daffy* is very simple. Each user in the `config.yaml` MUST have a password and CAN have a subdirectory.
+User management in _dave_ is very simple. Each user in the `config.yaml` MUST have a password and CAN have a subdirectory.
 
-The password must be in form of a BCrypt hash. You can generate one calling the shipped cli tool `daffycli pasdaffy`.
+The password must be in form of a BCrypt hash. You can generate one calling the shipped cli tool `davecli pasdaffy`.
 
 If a subdirectory is configured for a user, the user is jailed within it and can't see anything that exists outside of this directory. If no subdirectory is configured for an user, the user can see and modify all files within the base directory.
 
@@ -150,7 +153,7 @@ There is no need to restart the server itself, if you're editing the user or log
 
 ### Binary installation
 
-You can check out the [releases page](https://github.com/micromata/daffy/releases) for the latest precompiled binaries.
+You can check out the [releases page](https://github.com/micromata/dave/releases) for the latest precompiled binaries.
 
 ### Build from sources
 
@@ -166,7 +169,7 @@ mkdir -p $GOPATH/src/github.com/micromata/ && cd $GOPATH/src/github.com/micromat
 3. Clone the repository (or your fork)
 
 ```
-git clone git@github.com:micromata/daffy.git
+git clone git@github.com:micromata/dave.git
 ```
 
 To build and install from sources you have two major possibilites:
@@ -176,7 +179,7 @@ To build and install from sources you have two major possibilites:
 You can use the plain go toolchain and install the project to your `$GOPATH` via:
 
 ```
-cd $GOPATH/src/github.com/micromata/daffy && go install ./...
+cd $GOPATH/src/github.com/micromata/dave && go install ./...
 ```
 
 #### magefile
@@ -192,12 +195,12 @@ Please ensure you've got [mage](https://magefile.org) installed. This can be don
 Now you can call `mage install` to build and install the binaries. If you just call `mage`, you'll get a list of possible targets:
 
 	Targets:
-	  build            Builds daffy and daffycli and moves it to the dist directory
-	  buildReleases    Builds daffy and daffycli for different OS and package them to a zip file for each os
+	  build            Builds dave and davecli and moves it to the dist directory
+	  buildReleases    Builds dave and davecli for different OS and package them to a zip file for each os
 	  check            Runs golint and go tool vet on each .go file.
 	  clean            Removes the dist directory
 	  fmt              Formats the code via gofmt
-	  install          Installs daffy and daffycli to your $GOPATH/bin folder
+	  install          Installs dave and davecli to your $GOPATH/bin folder
 	  installDeps      Runs dep ensure and installs additional dependencies.
 
 ## Connecting

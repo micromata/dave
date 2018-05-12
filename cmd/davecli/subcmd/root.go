@@ -8,7 +8,7 @@ import (
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
-	Use:   "daffycli",
+	Use:   "davecli",
 	Short: "A cli for the simple webdav server",
 }
 

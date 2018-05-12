@@ -28,7 +28,7 @@ type target struct {
 	goarch string
 }
 
-// Build Builds daffy and daffycli and moves it to the dist directory
+// Build Builds dave and davecli and moves it to the dist directory
 func Build() error {
 	mg.Deps(InstallDeps)
 	mg.Deps(Clean)
@@ -47,7 +47,7 @@ func Build() error {
 	return nil
 }
 
-// BuildReleases Builds daffy and daffycli for different OS and package them to a zip file for each os
+// BuildReleases Builds dave and davecli for different OS and package them to a zip file for each os
 func BuildReleases() error {
 	mg.Deps(Clean)
 
@@ -61,20 +61,20 @@ func BuildReleases() error {
 
 	for _, t := range targets {
 		fmt.Printf("Building for OS %s and architecture %s\n", t.goos, t.goarch)
-		daffy, daffyCli, _ := buildSpecific(t)
+		dave, daveCli, _ := buildSpecific(t)
 
 		files := []string{
-			daffy,
-			daffyCli,
+			dave,
+			daveCli,
 			"Readme.md",
 			filepath.Join("examples", "config-sample.yaml"),
 		}
 
-		archiveName := fmt.Sprintf("daffy-%s-%s.zip", t.goos, t.goarch)
+		archiveName := fmt.Sprintf("dave-%s-%s.zip", t.goos, t.goarch)
 		zipFiles(filepath.Join("dist", archiveName), files)
 
-		os.Remove(daffy)
-		os.Remove(daffyCli)
+		os.Remove(dave)
+		os.Remove(daveCli)
 	}
 
 	return nil
@@ -132,7 +132,7 @@ func Check() error {
 	return nil
 }
 
-// Install Installs daffy and daffycli to your $GOPATH/bin folder
+// Install Installs dave and davecli to your $GOPATH/bin folder
 func Install() error {
 	mg.Deps(InstallDeps)
 
@@ -179,8 +179,8 @@ func buildSpecific(t target) (string, string, error) {
 		env = append(env, fmt.Sprintf("GOARCH=%s", t.goarch))
 	}
 
-	daffySource := filepath.Join("cmd", "daffy", "main.go")
-	daffyExe := filepath.Join(DIST, "daffy")
+	daffySource := filepath.Join("cmd", "dave", "main.go")
+	daffyExe := filepath.Join(DIST, "dave")
 	if t.goos == "windows" {
 		daffyExe += ".exe"
 	}
@@ -191,8 +191,8 @@ func buildSpecific(t target) (string, string, error) {
 		return "", "", err
 	}
 
-	daffyCliSource := filepath.Join("cmd", "daffycli", "main.go")
-	daffyCliExe := filepath.Join(DIST, "daffycli")
+	daffyCliSource := filepath.Join("cmd", "davecli", "main.go")
+	daffyCliExe := filepath.Join(DIST, "davecli")
 	if t.goos == "windows" {
 		daffyCliExe += ".exe"
 	}
