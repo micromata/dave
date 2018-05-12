@@ -1,13 +1,13 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 	"github.com/fsnotify/fsnotify"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"os"
 	"path/filepath"
-	"errors"
 )
 
 // Config represents the configuration of the server application.
@@ -50,6 +50,7 @@ func ParseConfig() *Config {
 	viper.SetConfigName("config")
 	viper.AddConfigPath("./config")
 	viper.AddConfigPath("$HOME/.swd")
+	viper.AddConfigPath("$HOME/.daffy")
 	viper.AddConfigPath(".")
 
 	err := viper.ReadInConfig()

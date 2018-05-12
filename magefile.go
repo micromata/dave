@@ -28,7 +28,7 @@ type target struct {
 	goarch string
 }
 
-// Build Builds swd and swdcli and moves it to the dist directory
+// Build Builds daffy and daffycli and moves it to the dist directory
 func Build() error {
 	mg.Deps(InstallDeps)
 	mg.Deps(Clean)
@@ -47,7 +47,7 @@ func Build() error {
 	return nil
 }
 
-// BuildReleases Builds swd and swdcli for different OS and package them to a zip file for each os
+// BuildReleases Builds daffy and daffycli for different OS and package them to a zip file for each os
 func BuildReleases() error {
 	mg.Deps(Clean)
 
@@ -61,20 +61,20 @@ func BuildReleases() error {
 
 	for _, t := range targets {
 		fmt.Printf("Building for OS %s and architecture %s\n", t.goos, t.goarch)
-		swd, swdCli, _ := buildSpecific(t)
+		daffy, daffyCli, _ := buildSpecific(t)
 
 		files := []string{
-			swd,
-			swdCli,
+			daffy,
+			daffyCli,
 			"Readme.md",
 			filepath.Join("examples", "config-sample.yaml"),
 		}
 
-		archiveName := fmt.Sprintf("swd-%s-%s.zip", t.goos, t.goarch)
+		archiveName := fmt.Sprintf("daffy-%s-%s.zip", t.goos, t.goarch)
 		zipFiles(filepath.Join("dist", archiveName), files)
 
-		os.Remove(swd)
-		os.Remove(swdCli)
+		os.Remove(daffy)
+		os.Remove(daffyCli)
 	}
 
 	return nil
@@ -132,7 +132,7 @@ func Check() error {
 	return nil
 }
 
-// Install Installs swd and swdcli to your $GOPATH/bin folder
+// Install Installs daffy and daffycli to your $GOPATH/bin folder
 func Install() error {
 	mg.Deps(InstallDeps)
 
@@ -179,31 +179,31 @@ func buildSpecific(t target) (string, string, error) {
 		env = append(env, fmt.Sprintf("GOARCH=%s", t.goarch))
 	}
 
-	swdSource := filepath.Join("cmd", "swd", "main.go")
-	swdExe := filepath.Join(DIST, "swd")
+	daffySource := filepath.Join("cmd", "daffy", "main.go")
+	daffyExe := filepath.Join(DIST, "daffy")
 	if t.goos == "windows" {
-		swdExe += ".exe"
+		daffyExe += ".exe"
 	}
-	swdCommand := exec.Command("go", "build", "-o", swdExe, swdSource)
-	swdCommand.Env = env
-	err := swdCommand.Run()
+	daffyCommand := exec.Command("go", "build", "-o", daffyExe, daffySource)
+	daffyCommand.Env = env
+	err := daffyCommand.Run()
 	if err != nil {
 		return "", "", err
 	}
 
-	swdCliSource := filepath.Join("cmd", "swdcli", "main.go")
-	swdCliExe := filepath.Join(DIST, "swdcli")
+	daffyCliSource := filepath.Join("cmd", "daffycli", "main.go")
+	daffyCliExe := filepath.Join(DIST, "daffycli")
 	if t.goos == "windows" {
-		swdCliExe += ".exe"
+		daffyCliExe += ".exe"
 	}
-	swdCliCommand := exec.Command("go", "build", "-o", swdCliExe, swdCliSource)
-	swdCliCommand.Env = env
-	err = swdCliCommand.Run()
+	daffyCliCommand := exec.Command("go", "build", "-o", daffyCliExe, daffyCliSource)
+	daffyCliCommand.Env = env
+	err = daffyCliCommand.Run()
 	if err != nil {
 		return "", "", err
 	}
 
-	return swdExe, swdCliExe, nil
+	return daffyExe, daffyCliExe, nil
 }
 
 // zipFiles compresses one or many files into a single zip archive file.

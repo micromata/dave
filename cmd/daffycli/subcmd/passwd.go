@@ -10,7 +10,7 @@ import (
 	"syscall"
 )
 
-var passwdCmd = &cobra.Command{
+var pasdaffyCmd = &cobra.Command{
 	Use:   "passwd",
 	Short: "Generates a BCrypt hash of a given input string",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -47,5 +47,5 @@ func readPassword() []byte {
 }
 
 func init() {
-	RootCmd.AddCommand(passwdCmd)
+	RootCmd.AddCommand(pasdaffyCmd)
 }

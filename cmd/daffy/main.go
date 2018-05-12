@@ -3,7 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/micromata/swd/app"
+	"github.com/micromata/daffy/app"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/webdav"
 	syslog "log"
