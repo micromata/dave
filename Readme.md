@@ -155,6 +155,12 @@ There is no need to restart the server itself, if you're editing the user or log
 
 You can check out the [releases page](https://github.com/micromata/dave/releases) for the latest precompiled binaries.
 
+Otherwise you can use the binary installation via go get:
+
+```
+go get github.com/micromata/dave/cmd/...
+```
+
 ### Build from sources
 
 #### Setup
