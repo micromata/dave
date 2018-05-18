@@ -209,6 +209,30 @@ Now you can call `mage install` to build and install the binaries. If you just c
 	  install          Installs dave and davecli to your $GOPATH/bin folder
 	  installDeps      Runs dep ensure and installs additional dependencies.
 
+### Build and run with Docker
+
+Building dave with Docker is simple
+
+	git clone git@github.com:micromata/dave.git
+	cd dave
+	docker build -t dave .
+
+Let dave run
+    
+	# create webdav home
+	mkdir webdav-home
+	
+	docker run -d \
+		-p 8000:8000 \
+		-v $(pwd)/examples/config-sample.yaml:/config.yaml:ro \
+		-v $(pwd)/webdav-home:/tmp:rw \
+		dave
+
+To export the static binary simply run
+
+    docker run --rm --entrypoint="" dave cat /usr/local/bin/dave > dave
+    chmod u+x dave
+
 ## Connecting
 
 You could simply connect to the webdav server with a http(s) connection and a tool that allows the webdav protocol.
