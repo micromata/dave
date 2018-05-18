@@ -28,6 +28,7 @@ The project name _dave_ is an abbreviation for: **D**istributed **A**uthoring an
 - [Installation](#installation)
   * [Binary-Installation](#binary-installation)
   * [Build from sources](#build-from-sources)
+  * [Build and run with Docker](#build-and-run-with-docker)
 - [Connecting](#connecting)
 - [Contributing](#contributing)
 - [License](#license)
