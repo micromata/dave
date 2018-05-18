@@ -34,7 +34,7 @@ The project name _dave_ is an abbreviation for: **D**istributed **A**uthoring an
 
 ## Configuration
 
-The configuration is done in form of a yaml file. _daffy_ will scan the
+The configuration is done in form of a yaml file. _dave_ will scan the
 following locations for the presence of a `config.yaml` in the following
 order:
 
@@ -92,7 +92,7 @@ doesn't need a passphrase. Otherwise starting the server will fail.
 
 ### Behind a proxy
 
-_daffy_ will also work behind a reverse proxy. Here is an example
+_dave_ will also work behind a reverse proxy. Here is an example
 configuration with `apache2 httpd`'s `mod_proxy`:
 
     <Location /webdav>
@@ -104,7 +104,7 @@ configuration with `apache2 httpd`'s `mod_proxy`:
 
 User management in _dave_ is very simple. Each user in the `config.yaml` MUST have a password and CAN have a subdirectory.
 
-The password must be in form of a BCrypt hash. You can generate one calling the shipped cli tool `davecli pasdaffy`.
+The password must be in form of a BCrypt hash. You can generate one calling the shipped cli tool `davecli passwd`.
 
 If a subdirectory is configured for a user, the user is jailed within it and can't see anything that exists outside of this directory. If no subdirectory is configured for an user, the user can see and modify all files within the base directory.
 
