@@ -2,12 +2,6 @@
 
 
 [[projects]]
-  name = "github.com/abbot/go-http-auth"
-  packages = ["."]
-  revision = "0ddd408d5d60ea76e320503cc7dd091992dee608"
-  version = "v0.4.0"
-
-[[projects]]
   name = "github.com/fsnotify/fsnotify"
   packages = ["."]
   revision = "c2828203cd70a50dcccfb2761f8b1f8ceef9a8e9"
@@ -124,6 +118,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6e64b577abda36a4b7f73579db83d543cc98c0553d74f2d78f9469c0a4d81296"
+  inputs-digest = "d5d5664470ca11ef7f40764e17430b951c746bc4a1d6632a2e9d89c6f19cc79a"
   solver-name = "gps-cdcl"
   solver-version = 1

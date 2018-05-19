@@ -18,6 +18,7 @@ type Config struct {
 	Dir     string
 	TLS     *TLS
 	Log     Logging
+	Realm   string
 	Users   map[string]*UserInfo
 }
 
@@ -87,6 +88,7 @@ func setDefaults() {
 	viper.SetDefault("Prefix", "")
 	viper.SetDefault("Dir", "/tmp")
 	viper.SetDefault("TLS", nil)
+	viper.SetDefault("Realm", "dave")
 	viper.SetDefault("Log.Error", true)
 	viper.SetDefault("Log.Create", false)
 	viper.SetDefault("Log.Read", false)

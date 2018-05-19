@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"github.com/abbot/go-http-auth"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/webdav"
 	"os"
@@ -20,7 +19,7 @@ type Dir struct {
 }
 
 func (d Dir) resolveUser(ctx context.Context) string {
-	authInfo := auth.FromContext(ctx)
+	authInfo := AuthFromContext(ctx)
 	if authInfo != nil && authInfo.Authenticated {
 		return authInfo.Username
 	}
@@ -42,7 +41,8 @@ func (d Dir) resolve(ctx context.Context, name string) string {
 		dir = "."
 	}
 
-	authInfo := auth.FromContext(ctx)
+	// Second barrier after basic auth process
+	authInfo := AuthFromContext(ctx)
 	if authInfo != nil && authInfo.Authenticated {
 		userInfo := d.Config.Users[authInfo.Username]
 		if userInfo != nil && userInfo.Subdir != nil {

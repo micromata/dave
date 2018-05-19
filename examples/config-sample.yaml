@@ -26,6 +26,12 @@ port: "8000"
 dir: "/tmp"
 
 
+# --------------------------------- Basic Auth ---------------------------------
+#
+# Name of the basic auth realm
+#
+realm: "dave"
+
 # ----------------------------------- Users ------------------------------------
 #
 # A list of user definitions
