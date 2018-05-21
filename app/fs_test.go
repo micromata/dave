@@ -2,11 +2,13 @@ package app
 
 import (
 	"context"
-	"testing"
+	"fmt"
 	"os"
 	"path/filepath"
-	"time"
+	"reflect"
 	"strconv"
+	"testing"
+	"time"
 )
 
 func TestDirResolveUser(t *testing.T) {
@@ -173,7 +175,7 @@ func TestDirResolve(t *testing.T) {
 }
 
 func TestDirMkdir(t *testing.T) {
-	tmpDir := filepath.Join(os.TempDir(), "dave__"+strconv.FormatInt(time.Now().Unix(), 10))
+	tmpDir := filepath.Join(os.TempDir(), "dave__"+strconv.FormatInt(time.Now().UnixNano(), 10))
 	os.Mkdir(tmpDir, 0700)
 	defer os.RemoveAll(tmpDir)
 
@@ -185,15 +187,14 @@ func TestDirMkdir(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		ctx     context.Context
 		perm    os.FileMode
 		wantErr bool
 	}{
-		{"a", admin, 0700, false},
-		{"/a/", admin, 0700, true}, // already exists
-		{"ab/c\x00d/ef", admin, 0700, true},
-		{"/a/a/a/a", admin, 0700, true},
-		{"a/a/a/a", admin, 0700, true},
+		{"a", 0700, false},
+		{"/a/", 0700, true}, // already exists
+		{"ab/c\x00d/ef", 0700, true},
+		{"/a/a/a/a", 0700, true},
+		{"a/a/a/a", 0700, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -202,6 +203,259 @@ func TestDirMkdir(t *testing.T) {
 			}
 			if err := d.Mkdir(admin, tt.name, tt.perm); (err != nil) != tt.wantErr {
 				t.Errorf("Dir.Mkdir() name = %v, error = %v, wantErr %v", tt.name, err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestDirOpenFile(t *testing.T) {
+	tmpDir := filepath.Join(os.TempDir(), "dave__"+strconv.FormatInt(time.Now().UnixNano(), 10))
+	os.Mkdir(tmpDir, 0700)
+	defer os.RemoveAll(tmpDir)
+	configTmp := createTestConfig(tmpDir)
+
+	ctx := context.Background()
+	admin := context.WithValue(ctx, authInfoKey, &AuthInfo{Username: "admin", Authenticated: true})
+
+	tests := []struct {
+		name    string
+		flag    int
+		perm    os.FileMode
+		wantErr bool
+	}{
+		{"foo", os.O_RDWR, 0644, true},
+		{"foo", os.O_RDWR | os.O_CREATE, 0644, false},
+		{"ab/c\x00d/ef", os.O_RDWR, 0700, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := Dir{
+				Config: configTmp,
+			}
+			got, err := d.OpenFile(admin, tt.name, tt.flag, tt.perm)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Dir.OpenFile() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if !tt.wantErr {
+				wantFileInfo, err := os.Stat(filepath.Join(tmpDir, tt.name))
+				if err != nil {
+					t.Errorf("Dir.OpenFile() error = %v", err)
+				}
+
+				gotFileInfo, err := got.Stat()
+
+				if !reflect.DeepEqual(gotFileInfo, wantFileInfo) {
+					t.Errorf("Dir.OpenFile() = %v, want %v", gotFileInfo, wantFileInfo)
+				}
+			}
+		})
+	}
+}
+
+func TestRemoveDir(t *testing.T) {
+	tmpDir := filepath.Join(os.TempDir(), "dave__"+strconv.FormatInt(time.Now().UnixNano(), 10))
+	os.Mkdir(tmpDir, 0700)
+	defer os.RemoveAll(tmpDir)
+	configTmp := createTestConfig(tmpDir)
+
+	ctx := context.Background()
+	admin := context.WithValue(ctx, authInfoKey, &AuthInfo{Username: "admin", Authenticated: true})
+
+	tests := []struct {
+		name    string
+		wantErr bool
+	}{
+		{"a", false},
+		{"a/b/c", false},
+		{"/a/b/c", false},
+		{"ab/c\x00d/ef", true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := Dir{
+				Config: configTmp,
+			}
+
+			file := filepath.Join(tmpDir, tt.name)
+			if !tt.wantErr {
+				err := os.MkdirAll(file, 0700)
+				if err != nil {
+					t.Errorf("Dir.RemoveAll() pre condition failed. name = %v, error = %v", tt.name, err)
+				}
+			}
+
+			if err := d.RemoveAll(admin, tt.name); (err != nil) != tt.wantErr {
+				t.Errorf("Dir.RemoveAll() name = %v, error = %v, wantErr %v", tt.name, err, tt.wantErr)
+			}
+
+			if !tt.wantErr {
+				if _, err := os.Stat(file); err == nil {
+					t.Errorf("Dir.RemoveAll() post condition failed. name = %v, error = %v", tt.name, err)
+				}
+			}
+		})
+	}
+}
+
+func TestDirRemoveAll(t *testing.T) {
+	ctx := context.Background()
+	admin := context.WithValue(ctx, authInfoKey, &AuthInfo{Username: "admin", Authenticated: true})
+	tmpDir := filepath.Join(os.TempDir(), "dave__"+strconv.FormatInt(time.Now().UnixNano(), 10))
+	os.Mkdir(tmpDir, 0700)
+	defer os.RemoveAll(tmpDir)
+	configTmp := createTestConfig(tmpDir)
+
+	tests := []struct {
+		name       string
+		removeName string
+		wantErr    bool
+	}{
+		{"a/b/c", "a", false},
+		{"a/b/c", "a/b", false},
+		{"a/b/c", "a/b/c", false},
+		{"/a/b/c", "a", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := Dir{
+				Config: configTmp,
+			}
+
+			err := os.MkdirAll(filepath.Join(tmpDir, tt.name), 0700)
+			if err != nil {
+				t.Errorf("Dir.RemoveAll() error creating dir error = %v, name %v", err, tt.name)
+				return
+			}
+
+			if err := d.RemoveAll(admin, tt.removeName); (err != nil) != tt.wantErr {
+				t.Errorf("Dir.RemoveAll() removeName = %v, error = %v, wantErr %v", tt.removeName, err, tt.wantErr)
+				return
+			}
+
+			if _, err := os.Stat(filepath.Join(tmpDir, tt.removeName)); err == nil {
+				t.Errorf("Dir.RemoveAll() file or directory not deleted = %v, removeName %v", err, tt.removeName)
+				return
+			}
+
+			if _, err := os.Stat(filepath.Join(tmpDir, tt.removeName, "/..")); err != nil {
+				t.Errorf("Dir.RemoveAll() parent directory deleted = %v, removeName %v", err, tt.removeName)
+				return
+			}
+		})
+	}
+}
+
+func TestRename(t *testing.T) {
+	tmpDir := filepath.Join(os.TempDir(), "dave__"+strconv.FormatInt(time.Now().UnixNano(), 10))
+	os.Mkdir(tmpDir, 0700)
+	defer os.RemoveAll(tmpDir)
+	configTmp := createTestConfig(tmpDir)
+
+	ctx := context.Background()
+	admin := context.WithValue(ctx, authInfoKey, &AuthInfo{Username: "admin", Authenticated: true})
+
+	tests := []struct {
+		name      string
+		oldName   string
+		newName   string
+		create    bool
+		wantError bool
+	}{
+		{"a", "a", "b", false, true},
+		{"a", "a", "b", true, false},
+		{"\x00d", "\x00da", "foo", false, true},
+		{"\x00d", "foo", "\x00da", false, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := Dir{
+				Config: configTmp,
+			}
+
+			if tt.create {
+				_, err := d.OpenFile(admin, tt.oldName, os.O_RDWR|os.O_CREATE, 0700)
+				if err != nil {
+					t.Errorf("Dir.Rename() pre condition failed. name = %v, error = %v", tt.name, err)
+					return
+				}
+			}
+
+			if err := d.Rename(admin, tt.oldName, tt.newName); (err != nil) != tt.wantError {
+				t.Errorf("Dir.Rename() error = %v, wantErr %v", err, tt.wantError)
+				return
+			}
+
+			if _, err := os.Stat(filepath.Join(tmpDir, tt.oldName)); err == nil {
+				t.Errorf("Dir.Rename() oldName still remained. oldName = %v, newName = %v", tt.oldName, tt.newName)
+				return
+			}
+
+			join := filepath.Join(tmpDir, tt.newName)
+			fmt.Println(join)
+			if _, err := os.Stat(join); err != nil {
+				if !tt.create {
+					// If no file should be created, there can't be anything
+					return
+				}
+				t.Errorf("Dir.Rename() newName not present. oldName = %v, newName = %v", tt.oldName, tt.newName)
+				return
+			}
+
+		})
+	}
+}
+
+func TestDirStat(t *testing.T) {
+	tmpDir := filepath.Join(os.TempDir(), "dave__"+strconv.FormatInt(time.Now().UnixNano(), 10))
+	os.Mkdir(tmpDir, 0700)
+	defer os.RemoveAll(tmpDir)
+	configTmp := createTestConfig(tmpDir)
+
+	ctx := context.Background()
+	admin := context.WithValue(ctx, authInfoKey, &AuthInfo{Username: "admin", Authenticated: true})
+
+	tests := []struct {
+		name    string
+		kind    string
+		wantErr bool
+	}{
+		{"/a", "dir", false},
+		{"/a/b", "file", false},
+		{"\x00da", "file", true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := Dir{
+				Config: configTmp,
+			}
+
+			fp := filepath.Join(tmpDir, tt.name)
+			if tt.kind == "dir" {
+				err := os.MkdirAll(fp, 0700)
+				if err != nil {
+					t.Errorf("Dir.Stat() error creating dir. error = %v", err)
+					return
+				}
+			} else if !tt.wantErr {
+				_, err := os.OpenFile(fp, os.O_RDWR|os.O_CREATE, 0644)
+				if err != nil {
+					t.Errorf("Dir.Stat() error creating file. error = %v", err)
+					return
+				}
+			}
+
+			got, err := d.Stat(admin, tt.name)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Dir.Stat() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			want, err := os.Stat(filepath.Join(tmpDir, tt.name))
+
+			if !reflect.DeepEqual(got, want) {
+				t.Errorf("Dir.Stat() = %v, want %v", got, want)
 			}
 		})
 	}
