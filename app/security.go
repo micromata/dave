@@ -2,26 +2,23 @@ package app
 
 import (
 	"context"
-	"net/http"
-	"golang.org/x/crypto/bcrypt"
 	"fmt"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/crypto/bcrypt"
+	"net/http"
 )
 
 type contextKey int
-var authInfoKey contextKey = 0
 
+var authInfoKey contextKey
+
+// AuthInfo holds the username and authentication status
 type AuthInfo struct {
 	Username      string
 	Authenticated bool
 }
 
-// AuthWebdavHandler provides a ServeHTTP function with context and an application reference.
-type authWebdavHandler interface {
-	ServeHTTP(ctx context.Context, w http.ResponseWriter, r *http.Request, a *App)
-}
-
-// AuthWebdavHandlerFunc is a type definition which holds a context and application reference to
+// authWebdavHandlerFunc is a type definition which holds a context and application reference to
 // match the AuthWebdavHandler interface.
 type authWebdavHandlerFunc func(c context.Context, w http.ResponseWriter, r *http.Request, a *App)
 
@@ -30,29 +27,38 @@ func (f authWebdavHandlerFunc) ServeHTTP(c context.Context, w http.ResponseWrite
 	f(c, w, r, a)
 }
 
+// NewBasicAuthWebdavHandler creates a new http handler with basic auth features.
+// The handler will use the application config for user and password lookups.
+func NewBasicAuthWebdavHandler(a *App) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.Background()
+		handlerFunc := authWebdavHandlerFunc(handle)
+		handlerFunc.ServeHTTP(ctx, w, r, a)
+	})
+}
+
 func authorize(config *Config, username, password string) *AuthInfo {
 	if username == "" || password == "" {
 		log.WithField("user", username).Warn("Username not found or password empty")
-		return &AuthInfo{Authenticated:false}
+		return &AuthInfo{Authenticated: false}
 	}
 
 	user := config.Users[username]
 	if user == nil {
 		log.WithField("user", username).Warn("User not found")
-		return &AuthInfo{Authenticated:false}
+		return &AuthInfo{Authenticated: false}
 	}
 
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
 		log.WithField("user", username).Warn("Password doesn't match")
-		return &AuthInfo{Authenticated:false}
+		return &AuthInfo{Authenticated: false}
 	}
 
-	return &AuthInfo{Username:username, Authenticated:true}
+	return &AuthInfo{Username: username, Authenticated: true}
 }
 
-// AuthFromContext returns information about the authentication state of the
-// current user.
+// AuthFromContext returns information about the authentication state of the current user.
 func AuthFromContext(ctx context.Context) *AuthInfo {
 	info, ok := ctx.Value(authInfoKey).(*AuthInfo)
 	if !ok {
@@ -81,17 +87,7 @@ func handle(ctx context.Context, w http.ResponseWriter, r *http.Request, a *App)
 }
 
 func writeUnauthorized(w http.ResponseWriter, realm string) {
-	w.Header().Set("WWW-Authenticate", "Basic realm=" + realm)
+	w.Header().Set("WWW-Authenticate", "Basic realm="+realm)
 	w.WriteHeader(http.StatusUnauthorized)
 	w.Write([]byte(fmt.Sprintf("%d %s", http.StatusUnauthorized, "Unauthorized")))
-}
-
-// NewBasicAuthWebdavHandler creates a new http handler with basic auth features.
-// The handler will use the application config for user and password lookups.
-func NewBasicAuthWebdavHandler(a *App) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := context.Background()
-		handlerFunc := authWebdavHandlerFunc(handle)
-		handlerFunc.ServeHTTP(ctx, w, r, a)
-	})
 }
