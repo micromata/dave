@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
@@ -37,25 +38,22 @@ func NewBasicAuthWebdavHandler(a *App) http.Handler {
 	})
 }
 
-func authorize(config *Config, username, password string) *AuthInfo {
+func authenticate(config *Config, username, password string) (*AuthInfo, error) {
 	if username == "" || password == "" {
-		log.WithField("user", username).Warn("Username not found or password empty")
-		return &AuthInfo{Authenticated: false}
+		return &AuthInfo{Username: username, Authenticated: false}, errors.New("username not found or password empty")
 	}
 
 	user := config.Users[username]
 	if user == nil {
-		log.WithField("user", username).Warn("User not found")
-		return &AuthInfo{Authenticated: false}
+		return &AuthInfo{Username: username, Authenticated: false}, errors.New("user not found")
 	}
 
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
-		log.WithField("user", username).Warn("Password doesn't match")
-		return &AuthInfo{Authenticated: false}
+		return &AuthInfo{Username: username, Authenticated: false}, errors.New("Password doesn't match")
 	}
 
-	return &AuthInfo{Username: username, Authenticated: true}
+	return &AuthInfo{Username: username, Authenticated: true}, nil
 }
 
 // AuthFromContext returns information about the authentication state of the current user.
@@ -76,7 +74,11 @@ func handle(ctx context.Context, w http.ResponseWriter, r *http.Request, a *App)
 		return
 	}
 
-	authInfo := authorize(a.Config, username, password)
+	authInfo, err := authenticate(a.Config, username, password)
+	if err != nil {
+		log.WithField("user", username).Warn(err.Error())
+	}
+
 	if !authInfo.Authenticated {
 		writeUnauthorized(w, a.Config.Realm)
 		return
@@ -90,4 +92,13 @@ func writeUnauthorized(w http.ResponseWriter, realm string) {
 	w.Header().Set("WWW-Authenticate", "Basic realm="+realm)
 	w.WriteHeader(http.StatusUnauthorized)
 	w.Write([]byte(fmt.Sprintf("%d %s", http.StatusUnauthorized, "Unauthorized")))
+}
+
+func GenHash(password []byte) string {
+	pw, err := bcrypt.GenerateFromPassword(password, 10)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return string(pw)
 }

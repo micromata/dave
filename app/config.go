@@ -74,7 +74,7 @@ func ParseConfig() *Config {
 	}
 
 	viper.WatchConfig()
-	viper.OnConfigChange(cfg.updateConfig)
+	viper.OnConfigChange(cfg.handleConfigUpdate)
 
 	cfg.ensureUserDirs()
 
@@ -96,7 +96,7 @@ func setDefaults() {
 	viper.SetDefault("Log.Delete", false)
 }
 
-func (cfg *Config) updateConfig(e fsnotify.Event) {
+func (cfg *Config) handleConfigUpdate(e fsnotify.Event) {
 	var err error
 	defer func() {
 		r := recover()
@@ -119,13 +119,16 @@ func (cfg *Config) updateConfig(e fsnotify.Event) {
 	viper.ReadConfig(file)
 	viper.Unmarshal(&updatedCfg)
 
+	updateConfig(cfg, updatedCfg)
+}
+
+func updateConfig(cfg *Config, updatedCfg *Config) {
 	for username := range cfg.Users {
 		if updatedCfg.Users[username] == nil {
 			log.WithField("user", username).Info("Removed User from configuration")
 			delete(cfg.Users, username)
 		}
 	}
-
 	for username, v := range updatedCfg.Users {
 		if cfg.Users[username] == nil {
 			log.WithField("user", username).Info("Added User to configuration")
@@ -141,24 +144,19 @@ func (cfg *Config) updateConfig(e fsnotify.Event) {
 			}
 		}
 	}
-
 	cfg.ensureUserDirs()
-
 	if cfg.Log.Create != updatedCfg.Log.Create {
 		cfg.Log.Create = updatedCfg.Log.Create
 		log.WithField("enabled", cfg.Log.Create).Info("Set logging for create operations")
 	}
-
 	if cfg.Log.Read != updatedCfg.Log.Read {
 		cfg.Log.Read = updatedCfg.Log.Read
 		log.WithField("enabled", cfg.Log.Read).Info("Set logging for read operations")
 	}
-
 	if cfg.Log.Update != updatedCfg.Log.Update {
 		cfg.Log.Update = updatedCfg.Log.Update
 		log.WithField("enabled", cfg.Log.Update).Info("Set logging for update operations")
 	}
-
 	if cfg.Log.Delete != updatedCfg.Log.Delete {
 		cfg.Log.Delete = updatedCfg.Log.Delete
 		log.WithField("enabled", cfg.Log.Delete).Info("Set logging for delete operations")
@@ -167,7 +165,11 @@ func (cfg *Config) updateConfig(e fsnotify.Event) {
 
 func (cfg *Config) ensureUserDirs() {
 	if _, err := os.Stat(cfg.Dir); os.IsNotExist(err) {
-		os.Mkdir(cfg.Dir, os.ModePerm)
+		mkdirErr := os.Mkdir(cfg.Dir, os.ModePerm)
+		if mkdirErr != nil {
+			log.WithField("path", cfg.Dir).WithField("error", err).Warn("Can't create base dir")
+			return
+		}
 		log.WithField("path", cfg.Dir).Info("Created base dir")
 	}
 

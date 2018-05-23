@@ -2,10 +2,9 @@ package subcmd
 
 import (
 	"fmt"
+	"github.com/micromata/dave/app"
 	"github.com/spf13/cobra"
-	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/crypto/ssh/terminal"
-	"log"
 	"os"
 	"syscall"
 )
@@ -25,17 +24,8 @@ var passwdCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		fmt.Printf("Hashed Password: %s\n", GenHash(pw1))
+		fmt.Printf("Hashed Password: %s\n", app.GenHash(pw1))
 	},
-}
-
-func GenHash(password []byte) string {
-	pw, err := bcrypt.GenerateFromPassword(password, 10)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return string(pw)
 }
 
 func readPassword() []byte {
