@@ -179,31 +179,31 @@ func buildSpecific(t target) (string, string, error) {
 		env = append(env, fmt.Sprintf("GOARCH=%s", t.goarch))
 	}
 
-	daffySource := filepath.Join("cmd", "dave", "main.go")
-	daffyExe := filepath.Join(DIST, "dave")
+	daveSource := filepath.Join("cmd", "dave", "main.go")
+	daveExe := filepath.Join(DIST, "dave")
 	if t.goos == "windows" {
-		daffyExe += ".exe"
+		daveExe += ".exe"
 	}
-	daffyCommand := exec.Command("go", "build", "-o", daffyExe, daffySource)
-	daffyCommand.Env = env
-	err := daffyCommand.Run()
+	daveCommand := exec.Command("go", "build", "-o", daveExe, daveSource)
+	daveCommand.Env = env
+	err := daveCommand.Run()
 	if err != nil {
 		return "", "", err
 	}
 
-	daffyCliSource := filepath.Join("cmd", "davecli", "main.go")
-	daffyCliExe := filepath.Join(DIST, "davecli")
+	daveCliSource := filepath.Join("cmd", "davecli", "main.go")
+	daveCliExe := filepath.Join(DIST, "davecli")
 	if t.goos == "windows" {
-		daffyCliExe += ".exe"
+		daveCliExe += ".exe"
 	}
-	daffyCliCommand := exec.Command("go", "build", "-o", daffyCliExe, daffyCliSource)
-	daffyCliCommand.Env = env
-	err = daffyCliCommand.Run()
+	daveCliCommand := exec.Command("go", "build", "-o", daveCliExe, daveCliSource)
+	daveCliCommand.Env = env
+	err = daveCliCommand.Run()
 	if err != nil {
 		return "", "", err
 	}
 
-	return daffyExe, daffyCliExe, nil
+	return daveExe, daveCliExe, nil
 }
 
 // zipFiles compresses one or many files into a single zip archive file.

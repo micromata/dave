@@ -10,7 +10,7 @@ import (
 	"syscall"
 )
 
-var pasdaffyCmd = &cobra.Command{
+var passwdCmd = &cobra.Command{
 	Use:   "passwd",
 	Short: "Generates a BCrypt hash of a given input string",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -25,13 +25,17 @@ var pasdaffyCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		pw, err := bcrypt.GenerateFromPassword(pw1, 10)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		fmt.Printf("Hashed Password: %s\n", string(pw))
+		fmt.Printf("Hashed Password: %s\n", GenHash(pw1))
 	},
+}
+
+func GenHash(password []byte) string {
+	pw, err := bcrypt.GenerateFromPassword(password, 10)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return string(pw)
 }
 
 func readPassword() []byte {
@@ -47,5 +51,5 @@ func readPassword() []byte {
 }
 
 func init() {
-	RootCmd.AddCommand(pasdaffyCmd)
+	RootCmd.AddCommand(passwdCmd)
 }
