@@ -244,7 +244,7 @@ func TestDirOpenFile(t *testing.T) {
 					t.Errorf("Dir.OpenFile() error = %v", err)
 				}
 
-				gotFileInfo, err := got.Stat()
+				gotFileInfo, _ := got.Stat()
 
 				if !reflect.DeepEqual(gotFileInfo, wantFileInfo) {
 					t.Errorf("Dir.OpenFile() = %v, want %v", gotFileInfo, wantFileInfo)
@@ -452,7 +452,7 @@ func TestDirStat(t *testing.T) {
 				return
 			}
 
-			want, err := os.Stat(filepath.Join(tmpDir, tt.name))
+			want, _ := os.Stat(filepath.Join(tmpDir, tt.name))
 
 			if !reflect.DeepEqual(got, want) {
 				t.Errorf("Dir.Stat() = %v, want %v", got, want)
