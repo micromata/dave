@@ -1,17 +1,17 @@
 package app
 
 import (
+	"bytes"
+	"encoding/json"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"reflect"
+	"strconv"
 	"testing"
+	"time"
 
 	"github.com/spf13/viper"
-	"path/filepath"
-	"os"
-	"time"
-	"strconv"
-	"bytes"
-	"io/ioutil"
-	"encoding/json"
 )
 
 func TestParseConfig(t *testing.T) {
@@ -25,13 +25,29 @@ func TestParseConfig(t *testing.T) {
 		name string
 		want *Config
 	}{
-		{"default", cfg(t, tmpDir, `
+		{"default", cfg(t, tmpDir)},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			if got := ParseConfig(); !reflect.DeepEqual(got, tt.want) {
+				gotJSON, _ := json.Marshal(got)
+				wantJSON, _ := json.Marshal(tt.want)
+				t.Errorf("ParseConfig() = %s, want %s", gotJSON, wantJSON)
+			}
+		})
+	}
+}
+
+func cfg(t *testing.T, tmpDir string) *Config {
+	viper.SetConfigType("yaml")
+	var yamlCfg = []byte(`
 address: 1.2.3.4
 port: 42
 prefix: /oh-de-lally
 tls:
-  keyFile: `+ tmpDir+ `/robin.pem
-  certFile: `+ tmpDir+ `/tuck.pem
+  keyFile: ` + tmpDir + `/robin.pem
+  certFile: ` + tmpDir + `/tuck.pem
 dir: /sherwood/forest
 realm: uk
 users:
@@ -43,23 +59,7 @@ users:
     subdir: /sheriff
 log:
   error: true
-`)},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-
-			if got := ParseConfig(); !reflect.DeepEqual(got, tt.want) {
-				gotJson, _ := json.Marshal(got)
-				wantJson, _ := json.Marshal(tt.want)
-				t.Errorf("ParseConfig() = %s, want %s", gotJson, wantJson)
-			}
-		})
-	}
-}
-
-func cfg(t *testing.T, tmpDir string, content string) *Config {
-	viper.SetConfigType("yaml")
-	var yamlCfg = []byte(content)
+`)
 
 	err := ioutil.WriteFile(filepath.Join(tmpDir, "config.yaml"), yamlCfg, 0600)
 	if err != nil {

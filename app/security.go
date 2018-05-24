@@ -94,6 +94,7 @@ func writeUnauthorized(w http.ResponseWriter, realm string) {
 	w.Write([]byte(fmt.Sprintf("%d %s", http.StatusUnauthorized, "Unauthorized")))
 }
 
+// GenHash generates a bcrypt hashed password string
 func GenHash(password []byte) string {
 	pw, err := bcrypt.GenerateFromPassword(password, 10)
 	if err != nil {

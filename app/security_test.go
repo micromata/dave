@@ -1,6 +1,10 @@
 package app
 
 import (
+	"context"
+	"golang.org/x/net/webdav"
+	"net/http"
+	"net/http/httptest"
 	"reflect"
 	"testing"
 )
@@ -102,6 +106,128 @@ func TestAuthenticate(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("authenticate() name = %v, got = %v, want %v", tt.name, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestAuthFromContext(t *testing.T) {
+	type fakeKey int
+	var fakeKeyValue fakeKey
+
+	baseCtx := context.Background()
+	type args struct {
+		ctx context.Context
+	}
+	tests := []struct {
+		name string
+		args args
+		want *AuthInfo
+	}{
+		{
+			"success",
+			args{
+				ctx: context.WithValue(baseCtx, authInfoKey, &AuthInfo{"username", true}),
+			},
+			&AuthInfo{"username", true},
+		},
+		{
+			"failure",
+			args{
+				ctx: context.WithValue(baseCtx, fakeKeyValue, &AuthInfo{"username", true}),
+			},
+			nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := AuthFromContext(tt.args.ctx); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("AuthFromContext() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestHandle(t *testing.T) {
+	type args struct {
+		ctx      context.Context
+		w        *httptest.ResponseRecorder
+		r        *http.Request
+		username []byte
+		password []byte
+		a        *App
+	}
+	tests := []struct {
+		name       string
+		args       args
+		statusCode int
+	}{
+		{
+			"basic auth error",
+			args{
+				context.Background(),
+				httptest.NewRecorder(),
+				httptest.NewRequest("PROPFIND", "/", nil),
+				nil,
+				nil,
+				&App{Config: &Config{Users: map[string]*UserInfo{
+					"foo": {
+						Password: GenHash([]byte("password")),
+					},
+				}}},
+			},
+			401,
+		},
+		{
+			"unauthorized error",
+			args{
+				context.Background(),
+				httptest.NewRecorder(),
+				httptest.NewRequest("PROPFIND", "/", nil),
+				[]byte("u"),
+				[]byte("p"),
+				&App{Config: &Config{Users: map[string]*UserInfo{
+					"foo": {
+						Password: GenHash([]byte("password")),
+					},
+				}}},
+			},
+			401,
+		},
+		{
+			"ok",
+			args{
+				context.Background(),
+				httptest.NewRecorder(),
+				httptest.NewRequest("PROPFIND", "/", nil),
+				[]byte("foo"),
+				[]byte("password"),
+				&App{
+					Config: &Config{Users: map[string]*UserInfo{
+						"foo": {
+							Password: GenHash([]byte("password")),
+						},
+					}},
+					Handler: &webdav.Handler{
+						FileSystem: webdav.NewMemFS(),
+						LockSystem: webdav.NewMemLS(),
+					},
+				},
+			},
+			207,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.args.username != nil || tt.args.password != nil {
+				tt.args.r.SetBasicAuth(string(tt.args.username), string(tt.args.password))
+			}
+
+			handle(tt.args.ctx, tt.args.w, tt.args.r, tt.args.a)
+			resp := tt.args.w.Result()
+
+			if resp.StatusCode != tt.statusCode {
+				t.Errorf("TestHandle() = %v, want %v", resp.StatusCode, tt.statusCode)
 			}
 		})
 	}
