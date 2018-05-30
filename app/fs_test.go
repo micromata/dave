@@ -40,6 +40,8 @@ func TestDirResolveUser(t *testing.T) {
 	}
 }
 
+// This is a nearly concrete copy of the function TestDirResolve of golang.org/x/net/webdav/file_test.go
+// just with prefixes and configuration details.
 func TestDirResolve(t *testing.T) {
 	configTmp := createTestConfig("/tmp")
 	configRoot := createTestConfig("/")
