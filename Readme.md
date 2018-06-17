@@ -103,7 +103,7 @@ configuration with `apache2 httpd`'s `mod_proxy`:
 
 ### User management
 
-User management in _dave_ is very simple. Each user in the `config.yaml` MUST have a password and CAN have a subdirectory.
+User management in _dave_ is very simple, but optional. You don't have to add users if it's not necessary for your use case. But if you do, each user in the `config.yaml` **must** have a password and **can** have a subdirectory.
 
 The password must be in form of a BCrypt hash. You can generate one calling the shipped cli tool `davecli passwd`.
 

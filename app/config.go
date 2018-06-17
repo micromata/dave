@@ -87,6 +87,7 @@ func setDefaults() {
 	viper.SetDefault("Port", "8000")
 	viper.SetDefault("Prefix", "")
 	viper.SetDefault("Dir", "/tmp")
+	viper.SetDefault("Users", nil)
 	viper.SetDefault("TLS", nil)
 	viper.SetDefault("Realm", "dave")
 	viper.SetDefault("Log.Error", true)
@@ -94,6 +95,10 @@ func setDefaults() {
 	viper.SetDefault("Log.Read", false)
 	viper.SetDefault("Log.Update", false)
 	viper.SetDefault("Log.Delete", false)
+}
+
+func (cfg *Config) AuthenticationNeeded() bool {
+	return cfg.Users != nil && len(cfg.Users) != 0
 }
 
 func (cfg *Config) handleConfigUpdate(e fsnotify.Event) {
