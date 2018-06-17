@@ -24,7 +24,11 @@ func TestAuthenticate(t *testing.T) {
 		{
 			"empty username",
 			args{
-				config:   &Config{},
+				config: &Config{Users: map[string]*UserInfo{
+					"foo": {
+						Password: GenHash([]byte("password")),
+					},
+				}},
 				username: "",
 				password: "password",
 			},
@@ -37,7 +41,11 @@ func TestAuthenticate(t *testing.T) {
 		{
 			"empty password",
 			args{
-				config:   &Config{},
+				config: &Config{Users: map[string]*UserInfo{
+					"foo": {
+						Password: GenHash([]byte("password")),
+					},
+				}},
 				username: "foo",
 				password: "",
 			},
@@ -46,6 +54,32 @@ func TestAuthenticate(t *testing.T) {
 				Authenticated: false,
 			},
 			true,
+		},
+		{
+			"empty username without users",
+			args{
+				config:   &Config{},
+				username: "",
+				password: "password",
+			},
+			&AuthInfo{
+				Username:      "",
+				Authenticated: false,
+			},
+			false,
+		},
+		{
+			"empty password without users",
+			args{
+				config:   &Config{},
+				username: "foo",
+				password: "",
+			},
+			&AuthInfo{
+				Username:      "",
+				Authenticated: false,
+			},
+			false,
 		},
 		{
 			"user not found",

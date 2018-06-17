@@ -40,7 +40,7 @@ func NewBasicAuthWebdavHandler(a *App) http.Handler {
 
 func authenticate(config *Config, username, password string) (*AuthInfo, error) {
 	if !config.AuthenticationNeeded() {
-		return &AuthInfo{Username: "", Authenticated: true}, nil
+		return &AuthInfo{Username: "", Authenticated: false}, nil
 	}
 
 	if username == "" || password == "" {
