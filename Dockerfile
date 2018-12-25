@@ -1,4 +1,4 @@
-FROM golang:alpine
+FROM golang:1.11-alpine
 RUN apk add --no-cache git
 RUN go get -u github.com/micromata/dave/cmd/...
 
