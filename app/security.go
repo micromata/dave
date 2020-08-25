@@ -88,7 +88,13 @@ func handle(ctx context.Context, w http.ResponseWriter, req *http.Request, a *Ap
 	if err != nil {
 		ipAddr := req.Header.Get("X-Forwarded-For")
 		if len(ipAddr) == 0 {
-			ipAddr = strings.Split(req.RemoteAddr, ":")[0]
+			remoteAddr := req.RemoteAddr
+			lastIndex := strings.LastIndex(remoteAddr, ":")
+			if lastIndex != -1 {
+				ipAddr = remoteAddr[:lastIndex]
+			} else {
+				ipAddr = remoteAddr
+			}
 		}
 
 		log.WithField("user", username).WithField("address", ipAddr).WithError(err).Warn("User failed to login")
