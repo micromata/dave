@@ -236,6 +236,7 @@ func TestTreeWriteToMapExampleFile(t *testing.T) {
 				[]interface{}{"gamma", "delta"},
 				[]interface{}{int64(1), int64(2)},
 			},
+			"score": 4e-08,
 		},
 	}
 	testMaps(t, tree.ToMap(), expected)
@@ -324,6 +325,30 @@ c = nan`
 	}
 	if strings.TrimSpace(str) != strings.TrimSpace(expected) {
 		t.Fatalf("Expected:\n%s\nGot:\n%s", expected, str)
+	}
+}
+
+func TestIssue290(t *testing.T) {
+	tomlString :=
+		`[table]
+"127.0.0.1" = "value"
+"127.0.0.1:8028" = "value"
+"character encoding" = "value"
+"ʎǝʞ" = "value"`
+
+	t1, err := Load(tomlString)
+	if err != nil {
+		t.Fatal("load err:", err)
+	}
+
+	s, err := t1.ToTomlString()
+	if err != nil {
+		t.Fatal("ToTomlString err:", err)
+	}
+
+	_, err = Load(s)
+	if err != nil {
+		t.Fatal("reload err:", err)
 	}
 }
 

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build darwin dragonfly freebsd linux netbsd openbsd solaris
+// +build aix darwin dragonfly freebsd linux netbsd openbsd solaris
 
 package unix_test
 
@@ -15,6 +15,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
+	"syscall"
 	"testing"
 	"time"
 
@@ -59,6 +61,83 @@ func _() {
 	)
 }
 
+func TestErrnoSignalName(t *testing.T) {
+	testErrors := []struct {
+		num  syscall.Errno
+		name string
+	}{
+		{syscall.EPERM, "EPERM"},
+		{syscall.EINVAL, "EINVAL"},
+		{syscall.ENOENT, "ENOENT"},
+	}
+
+	for _, te := range testErrors {
+		t.Run(fmt.Sprintf("%d/%s", te.num, te.name), func(t *testing.T) {
+			e := unix.ErrnoName(te.num)
+			if e != te.name {
+				t.Errorf("ErrnoName(%d) returned %s, want %s", te.num, e, te.name)
+			}
+		})
+	}
+
+	testSignals := []struct {
+		num  syscall.Signal
+		name string
+	}{
+		{syscall.SIGHUP, "SIGHUP"},
+		{syscall.SIGPIPE, "SIGPIPE"},
+		{syscall.SIGSEGV, "SIGSEGV"},
+	}
+
+	for _, ts := range testSignals {
+		t.Run(fmt.Sprintf("%d/%s", ts.num, ts.name), func(t *testing.T) {
+			s := unix.SignalName(ts.num)
+			if s != ts.name {
+				t.Errorf("SignalName(%d) returned %s, want %s", ts.num, s, ts.name)
+			}
+		})
+	}
+}
+
+func TestSignalNum(t *testing.T) {
+	testSignals := []struct {
+		name string
+		want syscall.Signal
+	}{
+		{"SIGHUP", syscall.SIGHUP},
+		{"SIGPIPE", syscall.SIGPIPE},
+		{"SIGSEGV", syscall.SIGSEGV},
+		{"NONEXISTS", 0},
+	}
+	for _, ts := range testSignals {
+		t.Run(fmt.Sprintf("%s/%d", ts.name, ts.want), func(t *testing.T) {
+			got := unix.SignalNum(ts.name)
+			if got != ts.want {
+				t.Errorf("SignalNum(%s) returned %d, want %d", ts.name, got, ts.want)
+			}
+		})
+
+	}
+}
+
+func TestFcntlInt(t *testing.T) {
+	t.Parallel()
+	file, err := ioutil.TempFile("", "TestFnctlInt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(file.Name())
+	defer file.Close()
+	f := file.Fd()
+	flags, err := unix.FcntlInt(f, unix.F_GETFD, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if flags&unix.FD_CLOEXEC == 0 {
+		t.Errorf("flags %#x do not include FD_CLOEXEC", flags)
+	}
+}
+
 // TestFcntlFlock tests whether the file locking structure matches
 // the calling convention of each kernel.
 func TestFcntlFlock(t *testing.T) {
@@ -86,9 +165,34 @@ func TestFcntlFlock(t *testing.T) {
 // "-test.run=^TestPassFD$" and an environment variable used to signal
 // that the test should become the child process instead.
 func TestPassFD(t *testing.T) {
+	if runtime.GOOS == "darwin" && (runtime.GOARCH == "arm" || runtime.GOARCH == "arm64") {
+		t.Skip("cannot exec subprocess on iOS, skipping test")
+	}
+
 	if os.Getenv("GO_WANT_HELPER_PROCESS") == "1" {
 		passFDChild()
 		return
+	}
+
+	if runtime.GOOS == "aix" {
+		// Unix network isn't properly working on AIX
+		// 7.2 with Technical Level < 2
+		out, err := exec.Command("oslevel", "-s").Output()
+		if err != nil {
+			t.Skipf("skipping on AIX because oslevel -s failed: %v", err)
+		}
+
+		if len(out) < len("7200-XX-ZZ-YYMM") { // AIX 7.2, Tech Level XX, Service Pack ZZ, date YYMM
+			t.Skip("skipping on AIX because oslevel -s hasn't the right length")
+		}
+		aixVer := string(out[:4])
+		tl, err := strconv.Atoi(string(out[5:7]))
+		if err != nil {
+			t.Skipf("skipping on AIX because oslevel -s output cannot be parsed: %v", err)
+		}
+		if aixVer < "7200" || (aixVer == "7200" && tl < 2) {
+			t.Skip("skipped on AIX versions previous to 7.2 TL 2")
+		}
 	}
 
 	tempDir, err := ioutil.TempDir("", "TestPassFD")
@@ -273,6 +377,12 @@ func TestRlimit(t *testing.T) {
 	}
 	set := rlimit
 	set.Cur = set.Max - 1
+	if runtime.GOOS == "darwin" && set.Cur > 4096 {
+		// rlim_min for RLIMIT_NOFILE should be equal to
+		// or lower than kern.maxfilesperproc, which on
+		// some machines are 4096. See #40564.
+		set.Cur = 4096
+	}
 	err = unix.Setrlimit(unix.RLIMIT_NOFILE, &set)
 	if err != nil {
 		t.Fatalf("Setrlimit: set failed: %#v %v", set, err)
@@ -284,6 +394,9 @@ func TestRlimit(t *testing.T) {
 	}
 	set = rlimit
 	set.Cur = set.Max - 1
+	if runtime.GOOS == "darwin" && set.Cur > 4096 {
+		set.Cur = 4096
+	}
 	if set != get {
 		// Seems like Darwin requires some privilege to
 		// increase the soft limit of rlimit sandbox, though
@@ -312,6 +425,14 @@ func TestSeekFailure(t *testing.T) {
 	}
 }
 
+func TestSetsockoptString(t *testing.T) {
+	// should not panic on empty string, see issue #31277
+	err := unix.SetsockoptString(-1, 0, 0, "")
+	if err == nil {
+		t.Fatalf("SetsockoptString: did not fail")
+	}
+}
+
 func TestDup(t *testing.T) {
 	file, err := ioutil.TempFile("", "TestDup")
 	if err != nil {
@@ -326,14 +447,24 @@ func TestDup(t *testing.T) {
 		t.Fatalf("Dup: %v", err)
 	}
 
-	err = unix.Dup2(newFd, newFd+1)
+	// Create and reserve a file descriptor.
+	// Dup2 automatically closes it before reusing it.
+	nullFile, err := os.Open("/dev/null")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dupFd := int(file.Fd())
+	err = unix.Dup2(newFd, dupFd)
 	if err != nil {
 		t.Fatalf("Dup2: %v", err)
 	}
+	// Keep the dummy file open long enough to not be closed in
+	// its finalizer.
+	runtime.KeepAlive(nullFile)
 
 	b1 := []byte("Test123")
 	b2 := make([]byte, 7)
-	_, err = unix.Write(newFd+1, b1)
+	_, err = unix.Write(dupFd, b1)
 	if err != nil {
 		t.Fatalf("Write to dup2 fd failed: %v", err)
 	}
@@ -351,6 +482,12 @@ func TestDup(t *testing.T) {
 }
 
 func TestPoll(t *testing.T) {
+	if runtime.GOOS == "android" ||
+		(runtime.GOOS == "darwin" && (runtime.GOARCH == "arm" || runtime.GOARCH == "arm64")) {
+		t.Skip("mkfifo syscall is not available on android and iOS, skipping test")
+	}
+
+	defer chtmpdir(t)()
 	f, cleanup := mktmpfifo(t)
 	defer cleanup()
 
@@ -378,16 +515,89 @@ func TestPoll(t *testing.T) {
 	}
 }
 
+func TestSelect(t *testing.T) {
+	for {
+		n, err := unix.Select(0, nil, nil, nil, &unix.Timeval{Sec: 0, Usec: 0})
+		if err == unix.EINTR {
+			t.Logf("Select interrupted")
+			continue
+		} else if err != nil {
+			t.Fatalf("Select: %v", err)
+		}
+		if n != 0 {
+			t.Fatalf("Select: got %v ready file descriptors, expected 0", n)
+		}
+		break
+	}
+
+	dur := 250 * time.Millisecond
+	tv := unix.NsecToTimeval(int64(dur))
+	var took time.Duration
+	for {
+		start := time.Now()
+		n, err := unix.Select(0, nil, nil, nil, &tv)
+		took = time.Since(start)
+		if err == unix.EINTR {
+			t.Logf("Select interrupted after %v", took)
+			continue
+		} else if err != nil {
+			t.Fatalf("Select: %v", err)
+		}
+		if n != 0 {
+			t.Fatalf("Select: got %v ready file descriptors, expected 0", n)
+		}
+		break
+	}
+
+	// On some BSDs the actual timeout might also be slightly less than the requested.
+	// Add an acceptable margin to avoid flaky tests.
+	if took < dur*2/3 {
+		t.Errorf("Select: got %v timeout, expected at least %v", took, dur)
+	}
+
+	rr, ww, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rr.Close()
+	defer ww.Close()
+
+	if _, err := ww.Write([]byte("HELLO GOPHER")); err != nil {
+		t.Fatal(err)
+	}
+
+	rFdSet := &unix.FdSet{}
+	fd := int(rr.Fd())
+	rFdSet.Set(fd)
+
+	for {
+		n, err := unix.Select(fd+1, rFdSet, nil, nil, nil)
+		if err == unix.EINTR {
+			t.Log("Select interrupted")
+			continue
+		} else if err != nil {
+			t.Fatalf("Select: %v", err)
+		}
+		if n != 1 {
+			t.Fatalf("Select: got %v ready file descriptors, expected 1", n)
+		}
+		break
+	}
+}
+
 func TestGetwd(t *testing.T) {
 	fd, err := os.Open(".")
 	if err != nil {
 		t.Fatalf("Open .: %s", err)
 	}
 	defer fd.Close()
-	// These are chosen carefully not to be symlinks on a Mac
-	// (unlike, say, /var, /etc)
-	dirs := []string{"/", "/usr/bin"}
-	if runtime.GOOS == "darwin" {
+	// Directory list for test. Do not worry if any are symlinks or do not
+	// exist on some common unix desktop environments. That will be checked.
+	dirs := []string{"/", "/usr/bin", "/etc", "/var", "/opt"}
+	switch runtime.GOOS {
+	case "android":
+		dirs = []string{"/", "/system/bin"}
+	case "darwin":
 		switch runtime.GOARCH {
 		case "arm", "arm64":
 			d1, err := ioutil.TempDir("", "d1")
@@ -403,6 +613,17 @@ func TestGetwd(t *testing.T) {
 	}
 	oldwd := os.Getenv("PWD")
 	for _, d := range dirs {
+		// Check whether d exists, is a dir and that d's path does not contain a symlink
+		fi, err := os.Stat(d)
+		if err != nil || !fi.IsDir() {
+			t.Logf("Test dir %s stat error (%v) or not a directory, skipping", d, err)
+			continue
+		}
+		check, err := filepath.EvalSymlinks(d)
+		if err != nil || check != d {
+			t.Logf("Test dir %s (%s) is symlink or other error (%v), skipping", d, check, err)
+			continue
+		}
 		err = os.Chdir(d)
 		if err != nil {
 			t.Fatalf("Chdir: %v", err)
@@ -462,8 +683,23 @@ func TestFstatat(t *testing.T) {
 		t.Fatalf("Fstatat: %v", err)
 	}
 
-	if st1 != st2 {
-		t.Errorf("Fstatat: returned stat does not match Lstat")
+	if st2.Dev != st1.Dev {
+		t.Errorf("Fstatat: got dev %v, expected %v", st2.Dev, st1.Dev)
+	}
+	if st2.Ino != st1.Ino {
+		t.Errorf("Fstatat: got ino %v, expected %v", st2.Ino, st1.Ino)
+	}
+	if st2.Mode != st1.Mode {
+		t.Errorf("Fstatat: got mode %v, expected %v", st2.Mode, st1.Mode)
+	}
+	if st2.Uid != st1.Uid {
+		t.Errorf("Fstatat: got uid %v, expected %v", st2.Uid, st1.Uid)
+	}
+	if st2.Gid != st1.Gid {
+		t.Errorf("Fstatat: got gid %v, expected %v", st2.Gid, st1.Gid)
+	}
+	if st2.Size != st1.Size {
+		t.Errorf("Fstatat: got size %v, expected %v", st2.Size, st1.Size)
 	}
 }
 
@@ -495,7 +731,8 @@ func TestFchmodat(t *testing.T) {
 	didChmodSymlink := true
 	err = unix.Fchmodat(unix.AT_FDCWD, "symlink1", uint32(mode), unix.AT_SYMLINK_NOFOLLOW)
 	if err != nil {
-		if (runtime.GOOS == "linux" || runtime.GOOS == "solaris") && err == unix.EOPNOTSUPP {
+		if (runtime.GOOS == "android" || runtime.GOOS == "linux" ||
+			runtime.GOOS == "solaris" || runtime.GOOS == "illumos") && err == unix.EOPNOTSUPP {
 			// Linux and Illumos don't support flags != 0
 			didChmodSymlink = false
 		} else {
@@ -518,6 +755,81 @@ func TestFchmodat(t *testing.T) {
 	got := os.FileMode(st.Mode & 0777)
 	if got != mode {
 		t.Errorf("Fchmodat: failed to change symlink mode: expected %v, got %v", mode, got)
+	}
+}
+
+func TestMkdev(t *testing.T) {
+	major := uint32(42)
+	minor := uint32(7)
+	dev := unix.Mkdev(major, minor)
+
+	if unix.Major(dev) != major {
+		t.Errorf("Major(%#x) == %d, want %d", dev, unix.Major(dev), major)
+	}
+	if unix.Minor(dev) != minor {
+		t.Errorf("Minor(%#x) == %d, want %d", dev, unix.Minor(dev), minor)
+	}
+}
+
+func TestRenameat(t *testing.T) {
+	defer chtmpdir(t)()
+
+	from, to := "renamefrom", "renameto"
+
+	touch(t, from)
+
+	err := unix.Renameat(unix.AT_FDCWD, from, unix.AT_FDCWD, to)
+	if err != nil {
+		t.Fatalf("Renameat: unexpected error: %v", err)
+	}
+
+	_, err = os.Stat(to)
+	if err != nil {
+		t.Error(err)
+	}
+
+	_, err = os.Stat(from)
+	if err == nil {
+		t.Errorf("Renameat: stat of renamed file %q unexpectedly succeeded", from)
+	}
+}
+
+func TestUtimesNanoAt(t *testing.T) {
+	defer chtmpdir(t)()
+
+	symlink := "symlink1"
+	os.Remove(symlink)
+	err := os.Symlink("nonexisting", symlink)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Some filesystems only support microsecond resolution. Account for
+	// that in Nsec.
+	ts := []unix.Timespec{
+		{Sec: 1111, Nsec: 2000},
+		{Sec: 3333, Nsec: 4000},
+	}
+	err = unix.UtimesNanoAt(unix.AT_FDCWD, symlink, ts, unix.AT_SYMLINK_NOFOLLOW)
+	if err != nil {
+		t.Fatalf("UtimesNanoAt: %v", err)
+	}
+
+	var st unix.Stat_t
+	err = unix.Lstat(symlink, &st)
+	if err != nil {
+		t.Fatalf("Lstat: %v", err)
+	}
+
+	// Only check Mtim, Atim might not be supported by the underlying filesystem
+	expected := ts[1]
+	if st.Mtim.Nsec == 0 {
+		// Some filesystems only support 1-second time stamp resolution
+		// and will always set Nsec to 0.
+		expected.Nsec = 0
+	}
+	if st.Mtim != expected {
+		t.Errorf("UtimesNanoAt: wrong mtime: got %v, expected %v", st.Mtim, expected)
 	}
 }
 

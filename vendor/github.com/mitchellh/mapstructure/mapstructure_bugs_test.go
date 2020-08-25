@@ -3,6 +3,7 @@ package mapstructure
 import (
 	"reflect"
 	"testing"
+	"time"
 )
 
 // GH-1, GH-10, GH-96
@@ -368,5 +369,173 @@ func TestNextSquashMapstructure(t *testing.T) {
 	}
 	if data.Level1.Level2.Foo != "baz" {
 		t.Fatal("value should be baz")
+	}
+}
+
+type ImplementsInterfacePointerReceiver struct {
+	Name string
+}
+
+func (i *ImplementsInterfacePointerReceiver) DoStuff() {}
+
+type ImplementsInterfaceValueReceiver string
+
+func (i ImplementsInterfaceValueReceiver) DoStuff() {}
+
+// GH-140 Type error when using DecodeHook to decode into interface
+func TestDecode_DecodeHookInterface(t *testing.T) {
+	t.Parallel()
+
+	type Interface interface {
+		DoStuff()
+	}
+	type DecodeIntoInterface struct {
+		Test Interface
+	}
+
+	testData := map[string]string{"test": "test"}
+
+	stringToPointerInterfaceDecodeHook := func(from, to reflect.Type, data interface{}) (interface{}, error) {
+		if from.Kind() != reflect.String {
+			return data, nil
+		}
+
+		if to != reflect.TypeOf((*Interface)(nil)).Elem() {
+			return data, nil
+		}
+		// Ensure interface is satisfied
+		var impl Interface = &ImplementsInterfacePointerReceiver{data.(string)}
+		return impl, nil
+	}
+
+	stringToValueInterfaceDecodeHook := func(from, to reflect.Type, data interface{}) (interface{}, error) {
+		if from.Kind() != reflect.String {
+			return data, nil
+		}
+
+		if to != reflect.TypeOf((*Interface)(nil)).Elem() {
+			return data, nil
+		}
+		// Ensure interface is satisfied
+		var impl Interface = ImplementsInterfaceValueReceiver(data.(string))
+		return impl, nil
+	}
+
+	{
+		decodeInto := new(DecodeIntoInterface)
+
+		decoder, _ := NewDecoder(&DecoderConfig{
+			DecodeHook: stringToPointerInterfaceDecodeHook,
+			Result:     decodeInto,
+		})
+
+		err := decoder.Decode(testData)
+		if err != nil {
+			t.Fatalf("Decode returned error: %s", err)
+		}
+
+		expected := &ImplementsInterfacePointerReceiver{"test"}
+		if !reflect.DeepEqual(decodeInto.Test, expected) {
+			t.Fatalf("expected: %#v (%T), got: %#v (%T)", decodeInto.Test, decodeInto.Test, expected, expected)
+		}
+	}
+
+	{
+		decodeInto := new(DecodeIntoInterface)
+
+		decoder, _ := NewDecoder(&DecoderConfig{
+			DecodeHook: stringToValueInterfaceDecodeHook,
+			Result:     decodeInto,
+		})
+
+		err := decoder.Decode(testData)
+		if err != nil {
+			t.Fatalf("Decode returned error: %s", err)
+		}
+
+		expected := ImplementsInterfaceValueReceiver("test")
+		if !reflect.DeepEqual(decodeInto.Test, expected) {
+			t.Fatalf("expected: %#v (%T), got: %#v (%T)", decodeInto.Test, decodeInto.Test, expected, expected)
+		}
+	}
+}
+
+// #103 Check for data type before trying to access its composants prevent a panic error
+// in decodeSlice
+func TestDecodeBadDataTypeInSlice(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"Toto": "titi",
+	}
+	result := []struct {
+		Toto string
+	}{}
+
+	if err := Decode(input, &result); err == nil {
+		t.Error("An error was expected, got nil")
+	}
+}
+
+// #202 Ensure that intermediate maps in the struct -> struct decode process are settable
+// and not just the elements within them.
+func TestDecodeIntermeidateMapsSettable(t *testing.T) {
+	type Timestamp struct {
+		Seconds int64
+		Nanos   int32
+	}
+
+	type TsWrapper struct {
+		Timestamp *Timestamp
+	}
+
+	type TimeWrapper struct {
+		Timestamp time.Time
+	}
+
+	input := TimeWrapper{
+		Timestamp: time.Unix(123456789, 987654),
+	}
+
+	expected := TsWrapper{
+		Timestamp: &Timestamp{
+			Seconds: 123456789,
+			Nanos:   987654,
+		},
+	}
+
+	timePtrType := reflect.TypeOf((*time.Time)(nil))
+	mapStrInfType := reflect.TypeOf((map[string]interface{})(nil))
+
+	var actual TsWrapper
+	decoder, err := NewDecoder(&DecoderConfig{
+		Result: &actual,
+		DecodeHook: func(from, to reflect.Type, data interface{}) (interface{}, error) {
+			if from == timePtrType && to == mapStrInfType {
+				ts := data.(*time.Time)
+				nanos := ts.UnixNano()
+
+				seconds := nanos / 1000000000
+				nanos = nanos % 1000000000
+
+				return &map[string]interface{}{
+					"Seconds": seconds,
+					"Nanos":   int32(nanos),
+				}, nil
+			}
+			return data, nil
+		},
+	})
+
+	if err != nil {
+		t.Fatalf("failed to create decoder: %v", err)
+	}
+
+	if err := decoder.Decode(&input); err != nil {
+		t.Fatalf("failed to decode input: %v", err)
+	}
+
+	if !reflect.DeepEqual(expected, actual) {
+		t.Fatalf("expected: %#[1]v (%[1]T), got: %#[2]v (%[2]T)", expected, actual)
 	}
 }
