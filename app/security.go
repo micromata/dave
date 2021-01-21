@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
+	"strings"
 )
 
 type contextKey int
@@ -70,14 +71,14 @@ func AuthFromContext(ctx context.Context) *AuthInfo {
 	return info
 }
 
-func handle(ctx context.Context, w http.ResponseWriter, r *http.Request, a *App) {
+func handle(ctx context.Context, w http.ResponseWriter, req *http.Request, a *App) {
 	// if there are no users, we don't need authentication here
-	if (!a.Config.AuthenticationNeeded()) {
-		a.Handler.ServeHTTP(w, r.WithContext(ctx))
+	if !a.Config.AuthenticationNeeded() {
+		a.Handler.ServeHTTP(w, req.WithContext(ctx))
 		return
 	}
 
-	username, password, ok := httpAuth(r, a.Config)
+	username, password, ok := httpAuth(req, a.Config)
 	if !ok {
 		writeUnauthorized(w, a.Config.Realm)
 		return
@@ -85,7 +86,18 @@ func handle(ctx context.Context, w http.ResponseWriter, r *http.Request, a *App)
 
 	authInfo, err := authenticate(a.Config, username, password)
 	if err != nil {
-		log.WithField("user", username).Warn(err.Error())
+		ipAddr := req.Header.Get("X-Forwarded-For")
+		if len(ipAddr) == 0 {
+			remoteAddr := req.RemoteAddr
+			lastIndex := strings.LastIndex(remoteAddr, ":")
+			if lastIndex != -1 {
+				ipAddr = remoteAddr[:lastIndex]
+			} else {
+				ipAddr = remoteAddr
+			}
+		}
+
+		log.WithField("user", username).WithField("address", ipAddr).WithError(err).Warn("User failed to login")
 	}
 
 	if !authInfo.Authenticated {
@@ -94,7 +106,7 @@ func handle(ctx context.Context, w http.ResponseWriter, r *http.Request, a *App)
 	}
 
 	ctx = context.WithValue(ctx, authInfoKey, authInfo)
-	a.Handler.ServeHTTP(w, r.WithContext(ctx))
+	a.Handler.ServeHTTP(w, req.WithContext(ctx))
 }
 
 func httpAuth(r *http.Request, config *Config) (string, string, bool) {
@@ -109,7 +121,11 @@ func httpAuth(r *http.Request, config *Config) (string, string, bool) {
 func writeUnauthorized(w http.ResponseWriter, realm string) {
 	w.Header().Set("WWW-Authenticate", "Basic realm="+realm)
 	w.WriteHeader(http.StatusUnauthorized)
-	w.Write([]byte(fmt.Sprintf("%d %s", http.StatusUnauthorized, "Unauthorized")))
+	_, err := w.Write([]byte(fmt.Sprintf("%d %s", http.StatusUnauthorized, "Unauthorized")))
+
+	if err != nil {
+		log.WithError(err).Error("Error sending unauthorized response")
+	}
 }
 
 // GenHash generates a bcrypt hashed password string
