@@ -20,6 +20,7 @@ type Config struct {
 	Log     Logging
 	Realm   string
 	Users   map[string]*UserInfo
+	Cors    Cors
 }
 
 // Logging allows definition for logging each CRUD method.
@@ -41,6 +42,11 @@ type TLS struct {
 type UserInfo struct {
 	Password string
 	Subdir   *string
+}
+
+// Cors contains settings related to Cross-Origin Resource Sharing (CORS)
+type Cors struct {
+	Origin string
 }
 
 // ParseConfig parses the application configuration an sets defaults.

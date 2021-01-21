@@ -91,6 +91,18 @@ start with a TLS secured https connection.
 In the current release version you must take care, that the private key
 doesn't need a passphrase. Otherwise starting the server will fail.
 
+### Cross Origin Resource Sharing (CORS)
+
+In case you intend to operate this server from a web browser based application,
+you might need to allow [CORS](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing)
+access. To achieve that, you can configure the hosts you want to grant access to:
+
+	cors:
+		origin: "*"
+
+Note however that this has security implications, so be careful in production
+environments.
+
 ### Behind a proxy
 
 _dave_ will also work behind a reverse proxy. Here is an example

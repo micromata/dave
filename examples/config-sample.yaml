@@ -62,3 +62,10 @@ users:
 #  read: false
 #  update: false
 #  delete: false
+
+# ---------------------------------- CORS -----------------------------------
+#
+# Use the following section to enable Cross-origin access to the server.
+#
+#cors:
+#  origin: "*"
