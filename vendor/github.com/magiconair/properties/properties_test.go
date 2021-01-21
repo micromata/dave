@@ -1,4 +1,4 @@
-// Copyright 2017 Frank Schroeder. All rights reserved.
+// Copyright 2018 Frank Schroeder. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -11,6 +11,7 @@ import (
 	"math"
 	"os"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -151,12 +152,14 @@ var writeTests = []struct {
 	{"key = value \\\n   continued", "key = value continued\n", "ISO-8859-1"},
 	{"key⌘ = value", "key\\u2318 = value\n", "ISO-8859-1"},
 	{"ke\\ \\:y = value", "ke\\ \\:y = value\n", "ISO-8859-1"},
+	{"ke\\\\y = val\\\\ue", "ke\\\\y = val\\\\ue\n", "ISO-8859-1"},
 
 	// UTF-8 tests
 	{"key = value", "key = value\n", "UTF-8"},
 	{"key = value \\\n   continued", "key = value continued\n", "UTF-8"},
 	{"key⌘ = value⌘", "key⌘ = value⌘\n", "UTF-8"},
 	{"ke\\ \\:y = value", "ke\\ \\:y = value\n", "UTF-8"},
+	{"ke\\\\y = val\\\\ue", "ke\\\\y = val\\\\ue\n", "UTF-8"},
 }
 
 // ----------------------------------------------------------------------------
@@ -329,6 +332,7 @@ var stringTests = []struct {
 }{
 	// valid values
 	{"key = abc", "key", "def", "abc"},
+	{"key = ab\\\\c", "key", "def", "ab\\c"},
 
 	// non existent key
 	{"key = abc", "key2", "def", "def"},
@@ -345,6 +349,7 @@ var keysTests = []struct {
 	{"key = abc\nkey2=def", []string{"key", "key2"}},
 	{"key2 = abc\nkey=def", []string{"key2", "key"}},
 	{"key = abc\nkey=def", []string{"key"}},
+	{"key\\\\with\\\\backslashes = abc", []string{"key\\with\\backslashes"}},
 }
 
 // ----------------------------------------------------------------------------
@@ -551,7 +556,16 @@ func TestMustGetParsedDuration(t *testing.T) {
 	input := "key = 123ms\nkey2 = ghi"
 	p := mustParse(t, input)
 	assert.Equal(t, p.MustGetParsedDuration("key"), 123*time.Millisecond)
-	assert.Panic(t, func() { p.MustGetParsedDuration("key2") }, "time: invalid duration ghi")
+
+	ver := runtime.Version()
+	switch {
+	// gotip and go1.15 will return `time: invalid duration "ghi"`
+	case !strings.HasPrefix(ver, "go") || strings.HasPrefix(ver, "go1.15"):
+		assert.Panic(t, func() { p.MustGetParsedDuration("key2") }, `time: invalid duration "ghi"`)
+	default:
+		assert.Panic(t, func() { p.MustGetParsedDuration("key2") }, `time: invalid duration ghi`)
+	}
+
 	assert.Panic(t, func() { p.MustGetParsedDuration("invalid") }, "unknown property: invalid")
 }
 
@@ -901,6 +915,14 @@ func TestFilterFunc(t *testing.T) {
 	})
 	m := map[string]string{"key": "value"}
 	assert.Equal(t, pp.Map(), m)
+}
+
+func TestLoad(t *testing.T) {
+	x := "key=${value}\nvalue=${key}"
+	p := NewProperties()
+	p.DisableExpansion = true
+	err := p.Load([]byte(x), UTF8)
+	assert.Equal(t, err, nil)
 }
 
 // ----------------------------------------------------------------------------

@@ -21,3 +21,15 @@ mage_output_file.go
 
 # stupid osx
 .DS_Store
+
+# Goland
+.idea
+*.iml
+
+# Vim
+*.sw[op]
+Session.vim
+*~
+
+# GNU Screen
+.screenrc

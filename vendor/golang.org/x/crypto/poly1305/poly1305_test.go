@@ -5,7 +5,8 @@
 package poly1305
 
 import (
-	"bytes"
+	"crypto/rand"
+	"encoding/binary"
 	"encoding/hex"
 	"flag"
 	"testing"
@@ -14,81 +15,101 @@ import (
 
 var stressFlag = flag.Bool("stress", false, "run slow stress tests")
 
-var testData = []struct {
-	in, k, correct []byte
-}{
-	{
-		[]byte("Hello world!"),
-		[]byte("this is 32-byte key for Poly1305"),
-		[]byte{0xa6, 0xf7, 0x45, 0x00, 0x8f, 0x81, 0xc9, 0x16, 0xa2, 0x0d, 0xcc, 0x74, 0xee, 0xf2, 0xb2, 0xf0},
-	},
-	{
-		make([]byte, 32),
-		[]byte("this is 32-byte key for Poly1305"),
-		[]byte{0x49, 0xec, 0x78, 0x09, 0x0e, 0x48, 0x1e, 0xc6, 0xc2, 0x6b, 0x33, 0xb9, 0x1c, 0xcc, 0x03, 0x07},
-	},
-	{
-		make([]byte, 2007),
-		[]byte("this is 32-byte key for Poly1305"),
-		[]byte{0xda, 0x84, 0xbc, 0xab, 0x02, 0x67, 0x6c, 0x38, 0xcd, 0xb0, 0x15, 0x60, 0x42, 0x74, 0xc2, 0xaa},
-	},
-	{
-		make([]byte, 2007),
-		make([]byte, 32),
-		make([]byte, 16),
-	},
-	{
-		// This test triggers an edge-case. See https://go-review.googlesource.com/#/c/30101/.
-		[]byte{0x81, 0xd8, 0xb2, 0xe4, 0x6a, 0x25, 0x21, 0x3b, 0x58, 0xfe, 0xe4, 0x21, 0x3a, 0x2a, 0x28, 0xe9, 0x21, 0xc1, 0x2a, 0x96, 0x32, 0x51, 0x6d, 0x3b, 0x73, 0x27, 0x27, 0x27, 0xbe, 0xcf, 0x21, 0x29},
-		[]byte{0x3b, 0x3a, 0x29, 0xe9, 0x3b, 0x21, 0x3a, 0x5c, 0x5c, 0x3b, 0x3b, 0x05, 0x3a, 0x3a, 0x8c, 0x0d},
-		[]byte{0x6d, 0xc1, 0x8b, 0x8c, 0x34, 0x4c, 0xd7, 0x99, 0x27, 0x11, 0x8b, 0xbe, 0x84, 0xb7, 0xf3, 0x14},
-	},
-	{
-		// This test generates a result of (2^130-1) % (2^130-5).
-		[]byte{
-			0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		},
-		[]byte{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		[]byte{4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-	},
-	{
-		// This test generates a result of (2^130-6) % (2^130-5).
-		[]byte{
-			0xfa, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		},
-		[]byte{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		[]byte{0xfa, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
-	},
-	{
-		// This test generates a result of (2^130-5) % (2^130-5).
-		[]byte{
-			0xfb, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		},
-		[]byte{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		[]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-	},
+type test struct {
+	in    string
+	key   string
+	tag   string
+	state string
 }
 
-func testSum(t *testing.T, unaligned bool) {
-	var out [16]byte
-	var key [32]byte
+func (t *test) Input() []byte {
+	in, err := hex.DecodeString(t.in)
+	if err != nil {
+		panic(err)
+	}
+	return in
+}
 
+func (t *test) Key() [32]byte {
+	buf, err := hex.DecodeString(t.key)
+	if err != nil {
+		panic(err)
+	}
+	var key [32]byte
+	copy(key[:], buf[:32])
+	return key
+}
+
+func (t *test) Tag() [16]byte {
+	buf, err := hex.DecodeString(t.tag)
+	if err != nil {
+		panic(err)
+	}
+	var tag [16]byte
+	copy(tag[:], buf[:16])
+	return tag
+}
+
+func (t *test) InitialState() [3]uint64 {
+	// state is hex encoded in big-endian byte order
+	if t.state == "" {
+		return [3]uint64{0, 0, 0}
+	}
+	buf, err := hex.DecodeString(t.state)
+	if err != nil {
+		panic(err)
+	}
+	if len(buf) != 3*8 {
+		panic("incorrect state length")
+	}
+	return [3]uint64{
+		binary.BigEndian.Uint64(buf[16:24]),
+		binary.BigEndian.Uint64(buf[8:16]),
+		binary.BigEndian.Uint64(buf[0:8]),
+	}
+}
+
+func testSum(t *testing.T, unaligned bool, sumImpl func(tag *[TagSize]byte, msg []byte, key *[32]byte)) {
+	var tag [16]byte
 	for i, v := range testData {
-		in := v.in
+		// cannot set initial state before calling sum, so skip those tests
+		if v.InitialState() != [3]uint64{0, 0, 0} {
+			continue
+		}
+
+		in := v.Input()
 		if unaligned {
 			in = unalignBytes(in)
 		}
-		copy(key[:], v.k)
-		Sum(&out, in, &key)
-		if !bytes.Equal(out[:], v.correct) {
-			t.Errorf("%d: expected %x, got %x", i, v.correct, out[:])
+		key := v.Key()
+		sumImpl(&tag, in, &key)
+		if tag != v.Tag() {
+			t.Errorf("%d: expected %x, got %x", i, v.Tag(), tag[:])
 		}
+		if !Verify(&tag, in, &key) {
+			t.Errorf("%d: tag didn't verify", i)
+		}
+		// If the key is zero, the tag will always be zero, independent of the input.
+		if len(in) > 0 && key != [32]byte{} {
+			in[0] ^= 0xff
+			if Verify(&tag, in, &key) {
+				t.Errorf("%d: tag verified after altering the input", i)
+			}
+			in[0] ^= 0xff
+		}
+		// If the input is empty, the tag only depends on the second half of the key.
+		if len(in) > 0 {
+			key[0] ^= 0xff
+			if Verify(&tag, in, &key) {
+				t.Errorf("%d: tag verified after altering the key", i)
+			}
+			key[0] ^= 0xff
+		}
+		tag[0] ^= 0xff
+		if Verify(&tag, in, &key) {
+			t.Errorf("%d: tag verified after altering the tag", i)
+		}
+		tag[0] ^= 0xff
 	}
 }
 
@@ -125,16 +146,88 @@ func TestBurnin(t *testing.T) {
 	}
 }
 
-func TestSum(t *testing.T)          { testSum(t, false) }
-func TestSumUnaligned(t *testing.T) { testSum(t, true) }
+func TestSum(t *testing.T)                 { testSum(t, false, Sum) }
+func TestSumUnaligned(t *testing.T)        { testSum(t, true, Sum) }
+func TestSumGeneric(t *testing.T)          { testSum(t, false, sumGeneric) }
+func TestSumGenericUnaligned(t *testing.T) { testSum(t, true, sumGeneric) }
 
-func benchmark(b *testing.B, size int, unaligned bool) {
+func TestWriteGeneric(t *testing.T)          { testWriteGeneric(t, false) }
+func TestWriteGenericUnaligned(t *testing.T) { testWriteGeneric(t, true) }
+func TestWrite(t *testing.T)                 { testWrite(t, false) }
+func TestWriteUnaligned(t *testing.T)        { testWrite(t, true) }
+
+func testWriteGeneric(t *testing.T, unaligned bool) {
+	for i, v := range testData {
+		key := v.Key()
+		input := v.Input()
+		var out [16]byte
+
+		if unaligned {
+			input = unalignBytes(input)
+		}
+		h := newMACGeneric(&key)
+		if s := v.InitialState(); s != [3]uint64{0, 0, 0} {
+			h.macState.h = s
+		}
+		n, err := h.Write(input[:len(input)/3])
+		if err != nil || n != len(input[:len(input)/3]) {
+			t.Errorf("#%d: unexpected Write results: n = %d, err = %v", i, n, err)
+		}
+		n, err = h.Write(input[len(input)/3:])
+		if err != nil || n != len(input[len(input)/3:]) {
+			t.Errorf("#%d: unexpected Write results: n = %d, err = %v", i, n, err)
+		}
+		h.Sum(&out)
+		if tag := v.Tag(); out != tag {
+			t.Errorf("%d: expected %x, got %x", i, tag[:], out[:])
+		}
+	}
+}
+
+func testWrite(t *testing.T, unaligned bool) {
+	for i, v := range testData {
+		key := v.Key()
+		input := v.Input()
+		var out [16]byte
+
+		if unaligned {
+			input = unalignBytes(input)
+		}
+		h := New(&key)
+		if s := v.InitialState(); s != [3]uint64{0, 0, 0} {
+			h.macState.h = s
+		}
+		n, err := h.Write(input[:len(input)/3])
+		if err != nil || n != len(input[:len(input)/3]) {
+			t.Errorf("#%d: unexpected Write results: n = %d, err = %v", i, n, err)
+		}
+		n, err = h.Write(input[len(input)/3:])
+		if err != nil || n != len(input[len(input)/3:]) {
+			t.Errorf("#%d: unexpected Write results: n = %d, err = %v", i, n, err)
+		}
+		h.Sum(out[:0])
+		tag := v.Tag()
+		if out != tag {
+			t.Errorf("%d: expected %x, got %x", i, tag[:], out[:])
+		}
+		if !h.Verify(tag[:]) {
+			t.Errorf("%d: Verify failed", i)
+		}
+		tag[0] ^= 0xff
+		if h.Verify(tag[:]) {
+			t.Errorf("%d: Verify succeeded after modifying the tag", i)
+		}
+	}
+}
+
+func benchmarkSum(b *testing.B, size int, unaligned bool) {
 	var out [16]byte
 	var key [32]byte
 	in := make([]byte, size)
 	if unaligned {
 		in = unalignBytes(in)
 	}
+	rand.Read(in)
 	b.SetBytes(int64(len(in)))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -142,10 +235,34 @@ func benchmark(b *testing.B, size int, unaligned bool) {
 	}
 }
 
-func Benchmark64(b *testing.B)          { benchmark(b, 64, false) }
-func Benchmark1K(b *testing.B)          { benchmark(b, 1024, false) }
-func Benchmark64Unaligned(b *testing.B) { benchmark(b, 64, true) }
-func Benchmark1KUnaligned(b *testing.B) { benchmark(b, 1024, true) }
+func benchmarkWrite(b *testing.B, size int, unaligned bool) {
+	var key [32]byte
+	h := New(&key)
+	in := make([]byte, size)
+	if unaligned {
+		in = unalignBytes(in)
+	}
+	rand.Read(in)
+	b.SetBytes(int64(len(in)))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		h.Write(in)
+	}
+}
+
+func Benchmark64(b *testing.B)          { benchmarkSum(b, 64, false) }
+func Benchmark1K(b *testing.B)          { benchmarkSum(b, 1024, false) }
+func Benchmark2M(b *testing.B)          { benchmarkSum(b, 2*1024*1024, false) }
+func Benchmark64Unaligned(b *testing.B) { benchmarkSum(b, 64, true) }
+func Benchmark1KUnaligned(b *testing.B) { benchmarkSum(b, 1024, true) }
+func Benchmark2MUnaligned(b *testing.B) { benchmarkSum(b, 2*1024*1024, true) }
+
+func BenchmarkWrite64(b *testing.B)          { benchmarkWrite(b, 64, false) }
+func BenchmarkWrite1K(b *testing.B)          { benchmarkWrite(b, 1024, false) }
+func BenchmarkWrite2M(b *testing.B)          { benchmarkWrite(b, 2*1024*1024, false) }
+func BenchmarkWrite64Unaligned(b *testing.B) { benchmarkWrite(b, 64, true) }
+func BenchmarkWrite1KUnaligned(b *testing.B) { benchmarkWrite(b, 1024, true) }
+func BenchmarkWrite2MUnaligned(b *testing.B) { benchmarkWrite(b, 2*1024*1024, true) }
 
 func unalignBytes(in []byte) []byte {
 	out := make([]byte, len(in)+1)

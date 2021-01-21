@@ -1,12 +1,12 @@
-package mg_test
+package mg
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"log"
 	"testing"
 	"time"
-
-	"github.com/magefile/mage/mg"
 )
 
 func TestDepsRunOnce(t *testing.T) {
@@ -14,7 +14,7 @@ func TestDepsRunOnce(t *testing.T) {
 	f := func() {
 		done <- struct{}{}
 	}
-	go mg.Deps(f, f)
+	go Deps(f, f)
 	select {
 	case <-done:
 		// cool
@@ -36,19 +36,41 @@ func TestDepsOfDeps(t *testing.T) {
 		ch <- "h"
 	}
 	g := func() {
-		mg.Deps(h)
+		Deps(h)
 		ch <- "g"
 	}
 	f := func() {
-		mg.Deps(g)
+		Deps(g)
 		ch <- "f"
 	}
-	mg.Deps(f)
+	Deps(f)
 
 	res := <-ch + <-ch + <-ch
 
 	if res != "hgf" {
 		t.Fatal("expected h then g then f to run, but got " + res)
+	}
+}
+
+func TestSerialDeps(t *testing.T) {
+	ch := make(chan string, 3)
+	// this->f->g->h
+	h := func() {
+		ch <- "h"
+	}
+	g := func() {
+		ch <- "g"
+	}
+	f := func() {
+		SerialDeps(g, h)
+		ch <- "f"
+	}
+	Deps(f)
+
+	res := <-ch + <-ch + <-ch
+
+	if res != "ghf" {
+		t.Fatal("expected g then h then f to run, but got " + res)
 	}
 }
 
@@ -69,12 +91,12 @@ func TestDepError(t *testing.T) {
 			t.Fatalf(`expected to get "ouch!" but got "%s"`, actual)
 		}
 	}()
-	mg.Deps(f)
+	Deps(f)
 }
 
 func TestDepFatal(t *testing.T) {
 	f := func() error {
-		return mg.Fatal(99, "ouch!")
+		return Fatal(99, "ouch!")
 	}
 	defer func() {
 		v := recover()
@@ -89,20 +111,20 @@ func TestDepFatal(t *testing.T) {
 		if !ok {
 			t.Fatalf("expected recovered val to be error but was %T", v)
 		}
-		code := mg.ExitStatus(err)
+		code := ExitStatus(err)
 		if code != 99 {
 			t.Fatalf("Expected exit status 99, but got %v", code)
 		}
 	}()
-	mg.Deps(f)
+	Deps(f)
 }
 
 func TestDepTwoFatal(t *testing.T) {
 	f := func() error {
-		return mg.Fatal(99, "ouch!")
+		return Fatal(99, "ouch!")
 	}
 	g := func() error {
-		return mg.Fatal(11, "bang!")
+		return Fatal(11, "bang!")
 	}
 	defer func() {
 		v := recover()
@@ -118,30 +140,55 @@ func TestDepTwoFatal(t *testing.T) {
 		if !ok {
 			t.Fatalf("expected recovered val to be error but was %T", v)
 		}
-		code := mg.ExitStatus(err)
+		code := ExitStatus(err)
 		// two different error codes returns, so we give up and just use error
 		// code 1.
 		if code != 1 {
 			t.Fatalf("Expected exit status 1, but got %v", code)
 		}
 	}()
-	mg.Deps(f, g)
+	Deps(f, g)
 }
 
 func TestDepWithUnhandledFunc(t *testing.T) {
 	defer func() {
 		err := recover()
-		expected := "Invalid type for dependent function: func(string) string. Dependencies must be func(), func() error, func(context.Context) or func(context.Context) error"
-		actual, ok := err.(error)
+		_, ok := err.(error)
 		if !ok {
-			t.Fatalf("Expected type string from panic")
-		}
-		if actual.Error() != expected {
-			t.Fatalf("Expected panic %v but got %v", expected, err)
+			t.Fatalf("Expected type error from panic")
 		}
 	}()
 	var NotValid func(string) string = func(a string) string {
 		return a
 	}
-	mg.Deps(NotValid)
+	Deps(NotValid)
+}
+
+func TestDepsErrors(t *testing.T) {
+	buf := &bytes.Buffer{}
+	log := log.New(buf, "", 0)
+
+	h := func() error {
+		log.Println("running h")
+		return errors.New("oops")
+	}
+	g := func() {
+		Deps(h)
+		log.Println("running g")
+	}
+	f := func() {
+		Deps(g, h)
+		log.Println("running f")
+	}
+
+	defer func() {
+		err := recover()
+		if err == nil {
+			t.Fatal("expected f to panic")
+		}
+		if buf.String() != "running h\n" {
+			t.Fatalf("expected just h to run, but got\n%s", buf.String())
+		}
+	}()
+	f()
 }
