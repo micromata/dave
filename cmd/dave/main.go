@@ -42,7 +42,7 @@ func main() {
 		Handler: wdHandler,
 	}
 
-	http.Handle("/", wrapRecovery(app.NewBasicAuthWebdavHandler(a)))
+	http.Handle("/", wrapRecovery(app.NewBasicAuthWebdavHandler(a), config))
 	connAddr := fmt.Sprintf("%s:%s", config.Address, config.Port)
 
 	if config.TLS != nil {
@@ -63,7 +63,7 @@ func main() {
 	}
 }
 
-func wrapRecovery(handler http.Handler) http.Handler {
+func wrapRecovery(handler http.Handler, config *app.Config) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
@@ -75,6 +75,12 @@ func wrapRecovery(handler http.Handler) http.Handler {
 				}
 			}
 		}()
+
+		if len(config.Cors.Origin) > 0 {
+			w.Header().Set("Access-Control-Allow-Origin", config.Cors.Origin)
+			w.Header().Set("Access-Control-Allow-Headers", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "*")
+		}
 
 		handler.ServeHTTP(w, r)
 	})
