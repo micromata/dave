@@ -9,7 +9,6 @@ go:
 os:
   - linux
   - osx
-  - windows
 
 install:
   - go get github.com/golang/dep/cmd/dep
