@@ -5,8 +5,6 @@ on:
   push:
     branches:
       - master
-    paths:
-      - VERSION
 
 jobs:
   docker:
