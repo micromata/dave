@@ -23,4 +23,6 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
           repository: micromata/dave
+          readme-filepath: ./Readme.md
           short-description: 'Dave is a simple webdav server. Dave is an abbreviation for: Distributed Authoring and Versioning made easy.'
+
