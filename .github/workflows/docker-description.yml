@@ -3,8 +3,10 @@ name: docker-description
 
 on:
   push:
-    branches: [main]
+    branches:
+      - master
     paths:
+      - VERSION
       - README.md
       - .github/workflows/docker-description.yml
 
