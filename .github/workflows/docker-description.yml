@@ -7,7 +7,7 @@ on:
       - master
     paths:
       - VERSION
-      - README.md
+      - Readme.md
       - .github/workflows/docker-description.yml
 
 jobs:

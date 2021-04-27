@@ -1,7 +1,8 @@
-FROM golang:1.11-alpine AS build
-COPY . src/github.com/micromata/dave/
-RUN go build -o /go/bin/dave /go/src/github.com/micromata/dave/cmd/dave/main.go
-RUN go build -o /go/bin/davecli /go/src/github.com/micromata/dave/cmd/davecli/main.go
+FROM golang:1.16.3-alpine AS build
+WORKDIR $GOPATH/src/github.com/micromata/dave/
+COPY . .
+RUN go build -o /go/bin/dave cmd/dave/main.go
+RUN go build -o /go/bin/davecli cmd/davecli/main.go
 
 FROM alpine:latest  
 RUN adduser -S dave
