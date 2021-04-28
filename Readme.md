@@ -224,13 +224,15 @@ Now you can call `mage install` to build and install the binaries. If you just c
 
 ### Build and run with Docker
 
-Building dave with Docker is simple
+The image of dave is available on Docker Hub as [`micromata/dave`](https://hub.docker.com/r/micromata/dave).
+
+If you like to build it for your own, just execute the following lines:
 
 	git clone git@github.com:micromata/dave.git
 	cd dave
-	docker build -t dave .
+	docker build -t micromata/dave:latest .
 
-Let dave run
+You can run dave with the following lines:
     
 	# create webdav home
 	mkdir webdav-home
@@ -239,12 +241,7 @@ Let dave run
 		-p 8000:8000 \
 		-v $(pwd)/examples/config-sample.yaml:/config.yaml:ro \
 		-v $(pwd)/webdav-home:/tmp:rw \
-		dave
-
-To export the static binary simply run
-
-    docker run --rm --entrypoint="" dave cat /usr/local/bin/dave > dave
-    chmod u+x dave
+		micromata/dave:latest
 
 ## Connecting
 
