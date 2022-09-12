@@ -72,6 +72,16 @@ func AuthFromContext(ctx context.Context) *AuthInfo {
 }
 
 func handle(ctx context.Context, w http.ResponseWriter, req *http.Request, a *App) {
+	// handle a preflight if such a CORS request would be allowed
+	if req.Method == "OPTIONS" {
+		if a.Config.Cors.Origin == req.Header.Get("Origin") &&
+			req.Header.Get("Access-Control-Request-Method") != "" &&
+			req.Header.Get("Access-Control-Request-Headers") != "" {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+	}
+
 	// if there are no users, we don't need authentication here
 	if !a.Config.AuthenticationNeeded() {
 		a.Handler.ServeHTTP(w, req.WithContext(ctx))

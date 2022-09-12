@@ -80,6 +80,9 @@ func wrapRecovery(handler http.Handler, config *app.Config) http.Handler {
 			w.Header().Set("Access-Control-Allow-Origin", config.Cors.Origin)
 			w.Header().Set("Access-Control-Allow-Headers", "*")
 			w.Header().Set("Access-Control-Allow-Methods", "*")
+			if config.Cors.Credentials {
+				w.Header().Set("Access-Control-Allow-Credentials", "true")
+			}
 		}
 
 		handler.ServeHTTP(w, r)
