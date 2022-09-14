@@ -102,10 +102,11 @@ doesn't need a passphrase. Otherwise starting the server will fail.
 
 In case you intend to operate this server from a web browser based application,
 you might need to allow [CORS](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing)
-access. To achieve that, you can configure the hosts you want to grant access to:
+access. To achieve that, you can configure the host you want to grant access to:
 
 	cors:
-		origin: "*"
+		origin: "*"        # the origin to allow, or '*' for all
+        credentials: true  # whether to allow credentials via CORS
 
 Note however that this has security implications, so be careful in production
 environments.

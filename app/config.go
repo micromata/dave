@@ -46,7 +46,8 @@ type UserInfo struct {
 
 // Cors contains settings related to Cross-Origin Resource Sharing (CORS)
 type Cors struct {
-	Origin string
+	Origin      string
+	Credentials bool
 }
 
 // ParseConfig parses the application configuration an sets defaults.
@@ -101,6 +102,7 @@ func setDefaults() {
 	viper.SetDefault("Log.Read", false)
 	viper.SetDefault("Log.Update", false)
 	viper.SetDefault("Log.Delete", false)
+	viper.SetDefault("Cors.Credentials", false)
 }
 
 func (cfg *Config) AuthenticationNeeded() bool {
