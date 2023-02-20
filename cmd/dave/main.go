@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"github.com/micromata/dave/app"
 	log "github.com/sirupsen/logrus"
@@ -11,7 +12,12 @@ import (
 )
 
 func main() {
-	config := app.ParseConfig()
+	var configPath string
+
+	flag.StringVar(&configPath, "config", "", "Path to configuration file")
+	flag.Parse()
+
+	config := app.ParseConfig(configPath)
 
 	// Set formatter for logrus
 	formatter := &log.TextFormatter{}

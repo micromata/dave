@@ -51,15 +51,19 @@ type Cors struct {
 }
 
 // ParseConfig parses the application configuration an sets defaults.
-func ParseConfig() *Config {
+func ParseConfig(path string) *Config {
 	var cfg = &Config{}
 
 	setDefaults()
-	viper.SetConfigName("config")
-	viper.AddConfigPath("./config")
-	viper.AddConfigPath("$HOME/.swd")
-	viper.AddConfigPath("$HOME/.dave")
-	viper.AddConfigPath(".")
+	if path != "" {
+		viper.SetConfigFile(path)
+	} else {
+		viper.SetConfigName("config")
+		viper.AddConfigPath("./config")
+		viper.AddConfigPath("$HOME/.swd")
+		viper.AddConfigPath("$HOME/.dave")
+		viper.AddConfigPath(".")
+	}
 
 	err := viper.ReadInConfig()
 	if err != nil {
