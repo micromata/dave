@@ -1,13 +1,6 @@
 [![Build Status](https://travis-ci.org/micromata/dave.svg?branch=master)](https://travis-ci.org/micromata/dave)
 [![Go Report](https://goreportcard.com/badge/github.com/micromata/dave)](https://goreportcard.com/report/github.com/micromata/dave)
 
-# Looking for new maintainer/s.
-This application has been stable for years. It basically requires keeping it alive by updating Golang versions, and answer user questions. There are some features in Issue Tracker that are worth implementing. 
-
-Unfortunately, I don't have the time to take care of the project at the moment. I'm afraid there will be no more releases until there's a new maintainer.
-
-Don't hesitate to contact me if you're interested!
-
 # dave - The simple webdav server
 
 _dave_ is a simple webdav server that provides the following features:
