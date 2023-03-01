@@ -89,8 +89,7 @@ func Fmt() error {
 	}
 
 	for _, file := range fileList {
-		err = exec.Command("gofmt", "-s", "-l", "-w", file).Run()
-
+		err = execCommand("gofmt", "-s", "-l", "-w", file).Run()
 		if err != nil {
 			return err
 		}
@@ -109,16 +108,16 @@ func Check() error {
 	}
 
 	for _, file := range fileList {
-		lintOut, err := exec.Command("golint", file).Output()
-		if err != nil {
-			return err
-		}
-
+		lintOut, err := execCommand("golint", file).CombinedOutput()
 		if len(lintOut) > 0 {
 			fmt.Println(string(lintOut))
 		}
 
-		vetOut, err := exec.Command("go", "tool", "vet", file).Output()
+		if err != nil {
+			return err
+		}
+
+		vetOut, err := execCommand("go", "vet", file).CombinedOutput()
 		if len(vetOut) > 0 {
 			fmt.Println(string(vetOut))
 		}
@@ -134,13 +133,21 @@ func Check() error {
 // Install Installs dave and davecli to your $GOPATH/bin folder
 func Install() error {
 	fmt.Println("Installing...")
-	return exec.Command("go", "install", "./...").Run()
+	return execCommand("go", "install", "./...").Run()
 }
 
 // Clean Removes the dist directory
 func Clean() {
 	fmt.Println("Cleaning...")
 	os.RemoveAll(DIST)
+}
+
+func execCommand(name string, arg ...string) *exec.Cmd {
+	if mg.Verbose() {
+		fmt.Println("Executing:", name, strings.Join(arg, " "))
+	}
+
+	return exec.Command(name, arg...)
 }
 
 func goFileList() ([]string, error) {
@@ -169,7 +176,7 @@ func buildSpecific(t target) (string, string, error) {
 	if t.goos == "windows" {
 		daveExe += ".exe"
 	}
-	daveCommand := exec.Command("go", "build", "-o", daveExe, daveSource)
+	daveCommand := execCommand("go", "build", "-o", daveExe, daveSource)
 	daveCommand.Env = env
 	err := daveCommand.Run()
 	if err != nil {
@@ -181,7 +188,7 @@ func buildSpecific(t target) (string, string, error) {
 	if t.goos == "windows" {
 		daveCliExe += ".exe"
 	}
-	daveCliCommand := exec.Command("go", "build", "-o", daveCliExe, daveCliSource)
+	daveCliCommand := execCommand("go", "build", "-o", daveCliExe, daveCliSource)
 	daveCliCommand.Env = env
 	err = daveCliCommand.Run()
 	if err != nil {
