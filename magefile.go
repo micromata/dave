@@ -161,7 +161,7 @@ func Clean() {
 func goFileList() ([]string, error) {
 	fileList := make([]string, 0)
 	err := filepath.Walk(".", func(path string, f os.FileInfo, err error) error {
-		if !strings.HasPrefix(path, "vendor") && strings.HasSuffix(path, ".go") {
+		if strings.HasSuffix(path, ".go") {
 			fileList = append(fileList, path)
 		}
 
