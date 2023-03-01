@@ -102,6 +102,15 @@ func Fmt() error {
 func Check() error {
 	fmt.Println("Checking code ...")
 
+	vetOut, err := execCommand("go", "vet", "./...").CombinedOutput()
+	if len(vetOut) > 0 {
+		fmt.Println(string(vetOut))
+	}
+
+	if err != nil {
+		return err
+	}
+
 	fileList, err := goFileList()
 	if err != nil {
 		return err
@@ -111,15 +120,6 @@ func Check() error {
 		lintOut, err := execCommand("golint", file).CombinedOutput()
 		if len(lintOut) > 0 {
 			fmt.Println(string(lintOut))
-		}
-
-		if err != nil {
-			return err
-		}
-
-		vetOut, err := execCommand("go", "vet", file).CombinedOutput()
-		if len(vetOut) > 0 {
-			fmt.Println(string(vetOut))
 		}
 
 		if err != nil {
