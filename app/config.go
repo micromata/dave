@@ -109,6 +109,7 @@ func setDefaults() {
 	viper.SetDefault("Cors.Credentials", false)
 }
 
+// AuthenticationNeeded returns whether users are defined and authentication is required
 func (cfg *Config) AuthenticationNeeded() bool {
 	return cfg.Users != nil && len(cfg.Users) != 0
 }
