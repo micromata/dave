@@ -30,7 +30,6 @@ type target struct {
 
 // Build Builds dave and davecli and moves it to the dist directory
 func Build() error {
-	mg.Deps(InstallDeps)
 	mg.Deps(Clean)
 
 	if _, err := os.Stat(DIST); os.IsNotExist(err) {
@@ -134,22 +133,8 @@ func Check() error {
 
 // Install Installs dave and davecli to your $GOPATH/bin folder
 func Install() error {
-	mg.Deps(InstallDeps)
-
 	fmt.Println("Installing...")
 	return exec.Command("go", "install", "./...").Run()
-}
-
-// InstallDeps Runs dep ensure and installs additional dependencies.
-func InstallDeps() error {
-	fmt.Println("Installing Deps...")
-	err := exec.Command("dep", "ensure").Run()
-	if err != nil {
-		return err
-	}
-
-	// Install necessary dependency for windows compilation
-	return exec.Command("go", "get", "-u", "github.com/inconshreveable/mousetrap").Run()
 }
 
 // Clean Removes the dist directory
