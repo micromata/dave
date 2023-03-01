@@ -1,3 +1,4 @@
+//go:build mage
 // +build mage
 
 package main
@@ -83,16 +84,9 @@ func BuildReleases() error {
 func Fmt() error {
 	fmt.Println("Formatting code ...")
 
-	fileList, err := goFileList()
+	err := execCommand("gofmt", "-s", "-l", "-w", ".").Run()
 	if err != nil {
 		return err
-	}
-
-	for _, file := range fileList {
-		err = execCommand("gofmt", "-s", "-l", "-w", file).Run()
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil
@@ -111,20 +105,13 @@ func Check() error {
 		return err
 	}
 
-	fileList, err := goFileList()
-	if err != nil {
-		return err
+	lintOut, err := execCommand("golint", "./...").CombinedOutput()
+	if len(lintOut) > 0 {
+		fmt.Println(string(lintOut))
 	}
 
-	for _, file := range fileList {
-		lintOut, err := execCommand("golint", file).CombinedOutput()
-		if len(lintOut) > 0 {
-			fmt.Println(string(lintOut))
-		}
-
-		if err != nil {
-			return err
-		}
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -148,19 +135,6 @@ func execCommand(name string, arg ...string) *exec.Cmd {
 	}
 
 	return exec.Command(name, arg...)
-}
-
-func goFileList() ([]string, error) {
-	fileList := make([]string, 0)
-	err := filepath.Walk(".", func(path string, f os.FileInfo, err error) error {
-		if strings.HasSuffix(path, ".go") {
-			fileList = append(fileList, path)
-		}
-
-		return err
-	})
-
-	return fileList, err
 }
 
 func buildSpecific(t target) (string, string, error) {
