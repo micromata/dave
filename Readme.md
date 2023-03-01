@@ -215,9 +215,13 @@ You can also use mage to build the project.
 
 Please ensure you've got [mage](https://magefile.org) installed. This can be done with the following steps:
 
-	go get -u -d github.com/magefile/mage
-	cd $GOPATH/src/github.com/magefile/mage
+	git clone https://github.com/magefile/mage
+	cd mage
 	go run bootstrap.go
+
+The [golint](https://github.com/golang/lint) utility is also required for `mage check`:
+
+	go install golang.org/x/lint/golint
 
 Now you can call `mage install` to build and install the binaries. If you just call `mage`, you'll get a list of possible targets:
 
