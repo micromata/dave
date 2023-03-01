@@ -44,6 +44,13 @@ order:
 - The directory `$HOME/.dave`
 - The current working directory `.`
 
+Alternatively, the path to a configuration file can be specified on the
+command-line:
+
+```sh
+dave --config /path/to/config.yaml
+```
+
 ### First steps
 
 Here an example of a very simple but functional configuration:

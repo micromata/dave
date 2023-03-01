@@ -30,10 +30,10 @@ func TestParseConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			if got := ParseConfig(); !reflect.DeepEqual(got, tt.want) {
+			if got := ParseConfig(""); !reflect.DeepEqual(got, tt.want) {
 				gotJSON, _ := json.Marshal(got)
 				wantJSON, _ := json.Marshal(tt.want)
-				t.Errorf("ParseConfig() = %s, want %s", gotJSON, wantJSON)
+				t.Errorf("ParseConfig(\"\") = %s, want %s", gotJSON, wantJSON)
 			}
 		})
 	}
