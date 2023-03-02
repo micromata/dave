@@ -141,7 +141,7 @@ User management in _dave_ is very simple, but optional. You don't have to add us
 necessary for your use case. But if you do, each user in the `config.yaml` **must** have a
 password and **can** have a subdirectory.
 
-The password must be in form of a BCrypt hash. You can generate one calling the shipped cli 
+The password must be in form of a BCrypt hash. You can generate one calling the shipped cli
 tool `davecli passwd`.
 
 If a subdirectory is configured for a user, the user is jailed within it and can't see anything
@@ -159,7 +159,7 @@ You can enable / disable logging for the following operations:
 
 You can also enable or disable the error log.
 
-All file-operation logs are disabled per default until you will turn it on via the following 
+All file-operation logs are disabled per default until you will turn it on via the following
 config entries:
 
 ```yaml
@@ -209,8 +209,8 @@ go get github.com/micromata/dave/cmd/...
 
 #### Setup
 
-1. Ensure you've setup _go_ Take a look at the [installation guide](https://golang.org/doc/install) 
-   and how you [setup your path](https://github.com/golang/go/wiki/SettingGOPATH)
+1. Ensure you've set up _Go_. Take a look at the [installation guide](https://golang.org/doc/install)
+   and how you [set up your path](https://github.com/golang/go/wiki/SettingGOPATH)
 2. Create a source directory and change your working directory
 
 ```sh
@@ -220,7 +220,7 @@ mkdir -p $GOPATH/src/github.com/micromata/ && cd $GOPATH/src/github.com/micromat
 3. Clone the repository (or your fork)
 
 ```sh
-git clone git@github.com:micromata/dave.git
+git clone https://github.com/micromata/dave.git
 ```
 
 To build and install from sources you have two major possibilites:
@@ -271,13 +271,13 @@ The image of dave is available on Docker Hub as [`micromata/dave`](https://hub.d
 If you like to build it for your own, just execute the following lines:
 
 ```sh
-git clone git@github.com:micromata/dave.git
+git clone https://github.com/micromata/dave.git
 cd dave
 docker build -t micromata/dave:latest .
 ```
 
 You can run dave with the following lines:
-    
+
 ```sh
 # create webdav home
 mkdir webdav-home
@@ -299,7 +299,7 @@ enter the server address (e.g. `http://localhost:8000`) and choose connect.
 
 ## Contributing
 
-Everyone is welcome to create pull requests for this project. If you're new to github, take 
+Everyone is welcome to create pull requests for this project. If you're new to github, take
 a look [here](https://help.github.com/categories/collaborating-with-issues-and-pull-requests/)
 to get an idea of it.
 
@@ -311,7 +311,7 @@ mage fmt
 mage check
 ```
 
-If you've got an idea of a function that should find it's way into this project, but you 
+If you've got an idea of a function that should find it's way into this project, but you
 won't implement it by yourself, please create a new issue.
 
 ## License
