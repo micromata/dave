@@ -2,15 +2,15 @@
 #
 # The bind address to use
 #
-address: "0.0.0.0"
+address: '0.0.0.0'
 #
 # The listening port
 #
-port: "8000"
+port: '8000'
 #
 # The prefix path of the server. Default none
 #
-#prefix: "/"
+#prefix: '/'
 
 # ---------------------------- Transport security ------------------------------
 #tls:
@@ -23,14 +23,14 @@ port: "8000"
 #
 # The provided base dir
 #
-dir: "/tmp"
+dir: '/tmp'
 
 
 # --------------------------------- Basic Auth ---------------------------------
 #
 # Name of the basic auth realm
 #
-realm: "dave"
+realm: 'dave'
 
 # ----------------------------------- Users ------------------------------------
 #
@@ -41,14 +41,14 @@ users:
   # user with username 'user', password 'foo' and jailed access to '/tmp/user'
   #
   user:
-    password: "$2a$10$yITzSSNJZAdDZs8iVBQzkuZCzZ49PyjTiPIrmBUKUpB0pwX7eySvW"
-    subdir: "/user"
+    password: '$2a$10$yITzSSNJZAdDZs8iVBQzkuZCzZ49PyjTiPIrmBUKUpB0pwX7eySvW'
+    subdir: '/user'
 
   #
   # user with username 'admin', password 'foo' and access to '/tmp'
   #
   admin:
-    password: "$2a$10$yITzSSNJZAdDZs8iVBQzkuZCzZ49PyjTiPIrmBUKUpB0pwX7eySvW"
+    password: '$2a$10$yITzSSNJZAdDZs8iVBQzkuZCzZ49PyjTiPIrmBUKUpB0pwX7eySvW'
 
 
 # ---------------------------------- Logging -----------------------------------
@@ -68,4 +68,4 @@ users:
 # Use the following section to enable Cross-origin access to the server.
 #
 #cors:
-#  origin: "*"
+#  origin: '*'
