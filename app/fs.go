@@ -2,12 +2,15 @@ package app
 
 import (
 	"context"
-	log "github.com/sirupsen/logrus"
-	"golang.org/x/net/webdav"
+	"errors"
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
+	"golang.org/x/net/webdav"
 )
 
 // This file is an extension of golang.org/x/net/webdav/file.go.
@@ -77,6 +80,19 @@ func (d Dir) Mkdir(ctx context.Context, name string, perm os.FileMode) error {
 func (d Dir) OpenFile(ctx context.Context, name string, flag int, perm os.FileMode) (webdav.File, error) {
 	if name = d.resolve(ctx, name); name == "" {
 		return nil, os.ErrNotExist
+	}
+	// flag    0, os.O_RDONLY
+	// flag 1538, os.O_RDWR|os.O_CREATE|os.O_TRUNC
+	if flag != os.O_RDONLY {
+		for _, v := range d.Config.Deny.File.Write {
+			matched, err := filepath.Match(v, filepath.Base(name))
+			if err != nil {
+				return nil, err
+			}
+			if matched {
+				return nil, errors.New(fmt.Sprintf("write %s, access denied", name))
+			}
+		}
 	}
 	f, err := os.OpenFile(name, flag, perm)
 	if err != nil {

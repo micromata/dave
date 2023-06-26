@@ -3,11 +3,13 @@ package app
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/fsnotify/fsnotify"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"os"
-	"path/filepath"
 )
 
 // Config represents the configuration of the server application.
@@ -16,11 +18,20 @@ type Config struct {
 	Port    string
 	Prefix  string
 	Dir     string
+	Deny    Deny
 	TLS     *TLS
 	Log     Logging
 	Realm   string
 	Users   map[string]*UserInfo
 	Cors    Cors
+}
+
+type Deny struct {
+	File File
+}
+
+type File struct {
+	Write []string
 }
 
 // Logging allows definition for logging each CRUD method.
@@ -98,6 +109,7 @@ func setDefaults() {
 	viper.SetDefault("Port", "8000")
 	viper.SetDefault("Prefix", "")
 	viper.SetDefault("Dir", "/tmp")
+	viper.SetDefault("Deny.File.Write", nil)
 	viper.SetDefault("Users", nil)
 	viper.SetDefault("TLS", nil)
 	viper.SetDefault("Realm", "dave")
@@ -179,6 +191,10 @@ func updateConfig(cfg *Config, updatedCfg *Config) {
 		cfg.Log.Delete = updatedCfg.Log.Delete
 		log.WithField("enabled", cfg.Log.Delete).Info("Set logging for delete operations")
 	}
+	if !stringSlicesEqual(cfg.Deny.File.Write, updatedCfg.Deny.File.Write) {
+		cfg.Deny.File.Write = updatedCfg.Deny.File.Write
+		log.WithField("updated", strings.Join(cfg.Deny.File.Write, "; ")).Info("Updated denied file write entries")
+	}
 }
 
 func (cfg *Config) ensureUserDirs() {
@@ -200,4 +216,16 @@ func (cfg *Config) ensureUserDirs() {
 			}
 		}
 	}
+}
+
+func stringSlicesEqual(f, j []string) bool {
+	if len(f) != len(j) {
+		return false
+	}
+	for i, v := range f {
+		if v != j[i] {
+			return false
+		}
+	}
+	return true
 }
