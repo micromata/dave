@@ -27,10 +27,15 @@ type Config struct {
 }
 
 type Deny struct {
-	File File
+	File      File
+	Directory Directory
 }
 
 type File struct {
+	Write []string
+}
+
+type Directory struct {
 	Write []string
 }
 
@@ -110,6 +115,7 @@ func setDefaults() {
 	viper.SetDefault("Prefix", "")
 	viper.SetDefault("Dir", "/tmp")
 	viper.SetDefault("Deny.File.Write", nil)
+	viper.SetDefault("Deny.Directory.Write", nil)
 	viper.SetDefault("Users", nil)
 	viper.SetDefault("TLS", nil)
 	viper.SetDefault("Realm", "dave")
@@ -194,6 +200,10 @@ func updateConfig(cfg *Config, updatedCfg *Config) {
 	if !stringSlicesEqual(cfg.Deny.File.Write, updatedCfg.Deny.File.Write) {
 		cfg.Deny.File.Write = updatedCfg.Deny.File.Write
 		log.WithField("updated", strings.Join(cfg.Deny.File.Write, "; ")).Info("Updated denied file write entries")
+	}
+	if !stringSlicesEqual(cfg.Deny.Directory.Write, updatedCfg.Deny.Directory.Write) {
+		cfg.Deny.Directory.Write = updatedCfg.Deny.Directory.Write
+		log.WithField("updated", strings.Join(cfg.Deny.Directory.Write, "; ")).Info("Updated denied directory write entries")
 	}
 }
 

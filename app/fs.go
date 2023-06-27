@@ -61,6 +61,17 @@ func (d Dir) Mkdir(ctx context.Context, name string, perm os.FileMode) error {
 	if name = d.resolve(ctx, name); name == "" {
 		return os.ErrNotExist
 	}
+
+	for _, v := range d.Config.Deny.Directory.Write {
+		matched, err := filepath.Match(v, filepath.Base(name))
+		if err != nil {
+			return err
+		}
+		if matched {
+			return errors.New(fmt.Sprintf("mkdir %s, access denied", name))
+		}
+	}
+
 	err := os.Mkdir(name, perm)
 	if err != nil {
 		return err
@@ -94,6 +105,7 @@ func (d Dir) OpenFile(ctx context.Context, name string, flag int, perm os.FileMo
 			}
 		}
 	}
+
 	f, err := os.OpenFile(name, flag, perm)
 	if err != nil {
 		return nil, err
