@@ -66,11 +66,11 @@ dir: "/home/webdav"     # the provided base dir
 prefix: "/webdav"       # the url-prefix of the original url
 deny:                   # deny your OS to create garbage
   file:
-    write:              # deny creation of specified files
+    create:              # deny creation of specified files
       - .DS_Store
       - ._*             # globbing supported, https://pkg.go.dev/path/filepath#Match
   directory:
-    write:              # deny creation of specified directories
+    create:              # deny creation of specified directories
       - .Trashes
 users:
   user:                 # with password 'foo' and jailed access to '/home/webdav/user'

@@ -32,11 +32,11 @@ type Deny struct {
 }
 
 type File struct {
-	Write []string
+	Create []string
 }
 
 type Directory struct {
-	Write []string
+	Create []string
 }
 
 // Logging allows definition for logging each CRUD method.
@@ -114,8 +114,8 @@ func setDefaults() {
 	viper.SetDefault("Port", "8000")
 	viper.SetDefault("Prefix", "")
 	viper.SetDefault("Dir", "/tmp")
-	viper.SetDefault("Deny.File.Write", nil)
-	viper.SetDefault("Deny.Directory.Write", nil)
+	viper.SetDefault("Deny.File.Create", nil)
+	viper.SetDefault("Deny.Directory.Create", nil)
 	viper.SetDefault("Users", nil)
 	viper.SetDefault("TLS", nil)
 	viper.SetDefault("Realm", "dave")
@@ -197,13 +197,13 @@ func updateConfig(cfg *Config, updatedCfg *Config) {
 		cfg.Log.Delete = updatedCfg.Log.Delete
 		log.WithField("enabled", cfg.Log.Delete).Info("Set logging for delete operations")
 	}
-	if !stringSlicesEqual(cfg.Deny.File.Write, updatedCfg.Deny.File.Write) {
-		cfg.Deny.File.Write = updatedCfg.Deny.File.Write
-		log.WithField("updated", strings.Join(cfg.Deny.File.Write, "; ")).Info("Updated denied file write entries")
+	if !stringSlicesEqual(cfg.Deny.File.Create, updatedCfg.Deny.File.Create) {
+		cfg.Deny.File.Create = updatedCfg.Deny.File.Create
+		log.WithField("updated", strings.Join(cfg.Deny.File.Create, "; ")).Info("Updated denied file create entries")
 	}
-	if !stringSlicesEqual(cfg.Deny.Directory.Write, updatedCfg.Deny.Directory.Write) {
-		cfg.Deny.Directory.Write = updatedCfg.Deny.Directory.Write
-		log.WithField("updated", strings.Join(cfg.Deny.Directory.Write, "; ")).Info("Updated denied directory write entries")
+	if !stringSlicesEqual(cfg.Deny.Directory.Create, updatedCfg.Deny.Directory.Create) {
+		cfg.Deny.Directory.Create = updatedCfg.Deny.Directory.Create
+		log.WithField("updated", strings.Join(cfg.Deny.Directory.Create, "; ")).Info("Updated denied directory create entries")
 	}
 }
 

@@ -62,13 +62,13 @@ func (d Dir) Mkdir(ctx context.Context, name string, perm os.FileMode) error {
 		return os.ErrNotExist
 	}
 
-	for _, v := range d.Config.Deny.Directory.Write {
+	for _, v := range d.Config.Deny.Directory.Create {
 		matched, err := filepath.Match(v, filepath.Base(name))
 		if err != nil {
 			return err
 		}
 		if matched {
-			return errors.New(fmt.Sprintf("mkdir %s, access denied", name))
+			return errors.New(fmt.Sprintf("mkdir %s, action denied", name))
 		}
 	}
 
@@ -92,16 +92,17 @@ func (d Dir) OpenFile(ctx context.Context, name string, flag int, perm os.FileMo
 	if name = d.resolve(ctx, name); name == "" {
 		return nil, os.ErrNotExist
 	}
-	// flag    0, os.O_RDONLY
-	// flag 1538, os.O_RDWR|os.O_CREATE|os.O_TRUNC
-	if flag != os.O_RDONLY {
-		for _, v := range d.Config.Deny.File.Write {
-			matched, err := filepath.Match(v, filepath.Base(name))
-			if err != nil {
-				return nil, err
-			}
-			if matched {
-				return nil, errors.New(fmt.Sprintf("write %s, access denied", name))
+	if len(d.Config.Deny.File.Create) > 0 {
+		// os.O_RDONLY: 0, os.O_RDWR: 2, os.O_CREATE: 512, O_TRUNC: 1024
+		if flag == os.O_RDWR|os.O_CREATE|os.O_TRUNC || flag == os.O_RDWR|os.O_CREATE || flag == os.O_CREATE|os.O_TRUNC || flag == os.O_CREATE {
+			for _, v := range d.Config.Deny.File.Create {
+				matched, err := filepath.Match(v, filepath.Base(name))
+				if err != nil {
+					return nil, err
+				}
+				if matched {
+					return nil, errors.New(fmt.Sprintf("create %s, action denied", name))
+				}
 			}
 		}
 	}
