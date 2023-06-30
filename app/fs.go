@@ -62,7 +62,7 @@ func (d Dir) Mkdir(ctx context.Context, name string, perm os.FileMode) error {
 		return os.ErrNotExist
 	}
 
-	for _, v := range d.Config.Deny.Directory.Create {
+	for _, v := range d.Config.Deny.Create.Directory {
 		matched, err := filepath.Match(v, filepath.Base(name))
 		if err != nil {
 			return err
@@ -92,10 +92,10 @@ func (d Dir) OpenFile(ctx context.Context, name string, flag int, perm os.FileMo
 	if name = d.resolve(ctx, name); name == "" {
 		return nil, os.ErrNotExist
 	}
-	if len(d.Config.Deny.File.Create) > 0 {
+	if len(d.Config.Deny.Create.File) > 0 {
 		// os.O_RDONLY: 0, os.O_RDWR: 2, os.O_CREATE: 512, O_TRUNC: 1024
 		if flag == os.O_RDWR|os.O_CREATE|os.O_TRUNC || flag == os.O_RDWR|os.O_CREATE || flag == os.O_CREATE|os.O_TRUNC || flag == os.O_CREATE {
-			for _, v := range d.Config.Deny.File.Create {
+			for _, v := range d.Config.Deny.Create.File {
 				matched, err := filepath.Match(v, filepath.Base(name))
 				if err != nil {
 					return nil, err
