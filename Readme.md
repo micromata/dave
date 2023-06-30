@@ -65,12 +65,11 @@ port: "8000"            # the listening port
 dir: "/home/webdav"     # the provided base dir
 prefix: "/webdav"       # the url-prefix of the original url
 deny:                   # deny your OS to create garbage
-  file:
-    create:              # deny creation of specified files
+  create:
+    file:               # deny creation of specified files
       - .DS_Store
       - ._*             # globbing supported, https://pkg.go.dev/path/filepath#Match
-  directory:
-    create:              # deny creation of specified directories
+  directory:            # deny creation of specified directories
       - .Trashes
 users:
   user:                 # with password 'foo' and jailed access to '/home/webdav/user'
