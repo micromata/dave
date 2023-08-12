@@ -1,4 +1,4 @@
-FROM golang:1.16.3-alpine AS build
+FROM golang:1.20.7-alpine AS build
 WORKDIR $GOPATH/src/github.com/micromata/dave/
 COPY . .
 RUN go build -o /go/bin/dave cmd/dave/main.go
