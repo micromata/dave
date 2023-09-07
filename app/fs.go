@@ -55,6 +55,10 @@ func (d Dir) resolve(ctx context.Context, name string) string {
 
 // Mkdir resolves the physical file and delegates this to an os.Mkdir execution
 func (d Dir) Mkdir(ctx context.Context, name string, perm os.FileMode) error {
+	if d.Config.Readonly {
+		return os.ErrPermission
+	}
+
 	if name = d.resolve(ctx, name); name == "" {
 		return os.ErrNotExist
 	}
@@ -78,6 +82,12 @@ func (d Dir) OpenFile(ctx context.Context, name string, flag int, perm os.FileMo
 	if name = d.resolve(ctx, name); name == "" {
 		return nil, os.ErrNotExist
 	}
+
+	// open the file read-only
+	if d.Config.Readonly {
+		flag = os.O_RDONLY
+	}
+
 	f, err := os.OpenFile(name, flag, perm)
 	if err != nil {
 		return nil, err
@@ -95,6 +105,10 @@ func (d Dir) OpenFile(ctx context.Context, name string, flag int, perm os.FileMo
 
 // RemoveAll resolves the physical file and delegates this to an os.RemoveAll execution
 func (d Dir) RemoveAll(ctx context.Context, name string) error {
+	if d.Config.Readonly {
+		return os.ErrPermission
+	}
+
 	if name = d.resolve(ctx, name); name == "" {
 		return os.ErrNotExist
 	}
@@ -120,6 +134,10 @@ func (d Dir) RemoveAll(ctx context.Context, name string) error {
 
 // Rename resolves the physical file and delegates this to an os.Rename execution
 func (d Dir) Rename(ctx context.Context, oldName, newName string) error {
+	if d.Config.Readonly {
+		return os.ErrPermission
+	}
+
 	if oldName = d.resolve(ctx, oldName); oldName == "" {
 		return os.ErrNotExist
 	}
