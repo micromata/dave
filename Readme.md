@@ -3,6 +3,13 @@
 
 # dave - The simple WebDAV server
 
+## Sorry, this project is unmaintained 😢
+
+Thanks to all contributors for your incredible work! 
+
+
+## Introduction
+
 _dave_ is a simple WebDAV server that provides the following features:
 
 - Single binary that runs under Windows, Linux and OSX.
