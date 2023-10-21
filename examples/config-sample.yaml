@@ -69,3 +69,8 @@ users:
 #
 #cors:
 #  origin: '*'
+
+# ---------------------------- Readonly ------------------------------
+# Access control, only read operations are allowed.
+#
+readonly: true

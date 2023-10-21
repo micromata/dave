@@ -12,15 +12,16 @@ import (
 
 // Config represents the configuration of the server application.
 type Config struct {
-	Address string
-	Port    string
-	Prefix  string
-	Dir     string
-	TLS     *TLS
-	Log     Logging
-	Realm   string
-	Users   map[string]*UserInfo
-	Cors    Cors
+	Address  string
+	Port     string
+	Prefix   string
+	Dir      string
+	TLS      *TLS
+	Log      Logging
+	Realm    string
+	Users    map[string]*UserInfo
+	Cors     Cors
+	Readonly bool
 }
 
 // Logging allows definition for logging each CRUD method.
