@@ -51,6 +51,16 @@ users:
     password: '$2a$10$yITzSSNJZAdDZs8iVBQzkuZCzZ49PyjTiPIrmBUKUpB0pwX7eySvW'
 
 
+# ---------------------------------- Authentication bypass IP Addresses --------
+
+# A list of IP addresses that bypass authentication
+#
+#Authentication_Bypass_IP_Addresses:
+#  - '127.0.0.1'
+#  - '::1'
+#  - '984.49.158.188'
+
+
 # ---------------------------------- Logging -----------------------------------
 #
 # Seperated loglevels for file / directory operations. All set to false per

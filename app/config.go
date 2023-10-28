@@ -12,15 +12,16 @@ import (
 
 // Config represents the configuration of the server application.
 type Config struct {
-	Address string
-	Port    string
-	Prefix  string
-	Dir     string
-	TLS     *TLS
-	Log     Logging
-	Realm   string
-	Users   map[string]*UserInfo
-	Cors    Cors
+	Address                            string
+	Port                               string
+	Prefix                             string
+	Dir                                string
+	TLS                                *TLS
+	Log                                Logging
+	Realm                              string
+	Users                              map[string]*UserInfo
+	Authentication_Bypass_IP_Addresses []string
+	Cors                               Cors
 }
 
 // Logging allows definition for logging each CRUD method.
@@ -99,6 +100,7 @@ func setDefaults() {
 	viper.SetDefault("Prefix", "")
 	viper.SetDefault("Dir", "/tmp")
 	viper.SetDefault("Users", nil)
+	viper.SetDefault("Authentication_Bypass_IP_Addresses", nil)
 	viper.SetDefault("TLS", nil)
 	viper.SetDefault("Realm", "dave")
 	viper.SetDefault("Log.Error", true)
@@ -110,7 +112,14 @@ func setDefaults() {
 }
 
 // AuthenticationNeeded returns whether users are defined and authentication is required
-func (cfg *Config) AuthenticationNeeded() bool {
+func (cfg *Config) AuthenticationNeeded(requestIpAddress string) bool {
+	if cfg.Authentication_Bypass_IP_Addresses != nil {
+		for _, bypass_ip := range cfg.Authentication_Bypass_IP_Addresses {
+			if bypass_ip == requestIpAddress {
+				return false
+			}
+		}
+	}
 	return cfg.Users != nil && len(cfg.Users) != 0
 }
 

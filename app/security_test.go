@@ -133,7 +133,8 @@ func TestAuthenticate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := authenticate(tt.args.config, tt.args.username, tt.args.password)
+			requestIpAddress := "" // todo: test Authentication_Bypass_IP_Addresses, somehow..
+			got, err := authenticate(tt.args.config, tt.args.username, tt.args.password, requestIpAddress)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("authenticate() name = %v, error = %v, wantErr %v", tt.name, err, tt.wantErr)
 				return

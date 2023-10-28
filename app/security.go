@@ -3,11 +3,13 @@ package app
 import (
 	"context"
 	"fmt"
+	"net"
+	"net/http"
+	"strings"
+
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
-	"net/http"
-	"strings"
 )
 
 type contextKey int
@@ -39,8 +41,8 @@ func NewBasicAuthWebdavHandler(a *App) http.Handler {
 	})
 }
 
-func authenticate(config *Config, username, password string) (*AuthInfo, error) {
-	if !config.AuthenticationNeeded() {
+func authenticate(config *Config, username, password string, requestIpAddress string) (*AuthInfo, error) {
+	if !config.AuthenticationNeeded(requestIpAddress) {
 		return &AuthInfo{Username: "", Authenticated: false}, nil
 	}
 
@@ -72,6 +74,11 @@ func AuthFromContext(ctx context.Context) *AuthInfo {
 }
 
 func handle(ctx context.Context, w http.ResponseWriter, req *http.Request, a *App) {
+	requestIpAddress, _, ipFetchError := net.SplitHostPort(req.RemoteAddr)
+	if ipFetchError != nil {
+		log.WithError(ipFetchError).Error("Error fetching remote address ??")
+	}
+
 	// handle a preflight if such a CORS request would be allowed
 	if req.Method == "OPTIONS" {
 		if a.Config.Cors.Origin == req.Header.Get("Origin") &&
@@ -83,7 +90,7 @@ func handle(ctx context.Context, w http.ResponseWriter, req *http.Request, a *Ap
 	}
 
 	// if there are no users, we don't need authentication here
-	if !a.Config.AuthenticationNeeded() {
+	if !a.Config.AuthenticationNeeded(requestIpAddress) {
 		a.Handler.ServeHTTP(w, req.WithContext(ctx))
 		return
 	}
@@ -94,7 +101,7 @@ func handle(ctx context.Context, w http.ResponseWriter, req *http.Request, a *Ap
 		return
 	}
 
-	authInfo, err := authenticate(a.Config, username, password)
+	authInfo, err := authenticate(a.Config, username, password, requestIpAddress)
 	if err != nil {
 		ipAddr := req.Header.Get("X-Forwarded-For")
 		if len(ipAddr) == 0 {
@@ -120,7 +127,13 @@ func handle(ctx context.Context, w http.ResponseWriter, req *http.Request, a *Ap
 }
 
 func httpAuth(r *http.Request, config *Config) (string, string, bool) {
-	if config.AuthenticationNeeded() {
+
+	requestIpAddress, _, ipFetchError := net.SplitHostPort(r.RemoteAddr)
+	if ipFetchError != nil {
+		log.WithError(ipFetchError).Error("Error fetching remote address ??")
+	}
+
+	if config.AuthenticationNeeded(requestIpAddress) {
 		username, password, ok := r.BasicAuth()
 		return username, password, ok
 	}
